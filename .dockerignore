@@ -3,7 +3,17 @@ log
 script
 release
 .dockerignore
+.git
 .gitignore
+.env
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+reports/*
+!reports/.gitkeep
 docker-compose.yml
 Dockerfile
 LICENSE
