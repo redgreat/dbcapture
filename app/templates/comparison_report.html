@@ -150,10 +150,18 @@
                 <h4>{{ item.object_name }}</h4>
                 {% if item.difference_details %}
                 <div class="diff-details">
-                    <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
+                    {% if type == 'table' %}
+                        {% if item.difference_details is string %}
+                            {{ item.difference_details }}
+                        {% else %}
+                            <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
+                        {% endif %}
+                    {% else %}
+                        {{ item.difference_details.message }}
+                    {% endif %}
                 </div>
                 {% endif %}
-                {% if item.change_sql %}
+                {% if item.change_sql and type == 'table' %}
                 <h4>变更SQL:</h4>
                 <div class="sql-code">
                     <pre>{{ item.change_sql }}</pre>

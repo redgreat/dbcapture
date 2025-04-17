@@ -5,11 +5,23 @@ from sqlalchemy.orm import Session
 from app.models.comparison import Comparison, ComparisonResult, ComparisonType, ComparisonStatus
 from app.core.config import settings
 from app.models.db_connection import DbConnection
+from app.services.comparators import (
+    ViewComparator,
+    TableComparator,
+    ProcedureComparator,
+    FunctionComparator,
+    TriggerComparator
+)
 
 
 class DatabaseComparisonService:
     def __init__(self, db: Session):
         self.db = db
+        self.view_comparator = ViewComparator(db)
+        self.table_comparator = TableComparator(db)
+        self.procedure_comparator = ProcedureComparator(db)
+        self.function_comparator = FunctionComparator(db)
+        self.trigger_comparator = TriggerComparator(db)
 
     def create_comparison(self, comparison_data):
         """创建新的数据库比较任务"""
@@ -158,30 +170,25 @@ class DatabaseComparisonService:
                     
         return "\n".join(sql_statements)
 
-    def compare_table_structure(self, comparison_id: int) -> List[ComparisonResult]:
-        """比较表结构"""
-        # TODO: 实现表结构比较逻辑
-        pass
-
     def compare_views(self, comparison_id: int) -> List[ComparisonResult]:
         """比较视图"""
-        # TODO: 实现视图比较逻辑
-        pass
+        return self.view_comparator.compare(comparison_id)
+
+    def compare_table_structure(self, comparison_id: int) -> List[ComparisonResult]:
+        """比较表结构"""
+        return self.table_comparator.compare(comparison_id)
 
     def compare_procedures(self, comparison_id: int) -> List[ComparisonResult]:
         """比较存储过程"""
-        # TODO: 实现存储过程比较逻辑
-        pass
+        return self.procedure_comparator.compare(comparison_id)
 
     def compare_functions(self, comparison_id: int) -> List[ComparisonResult]:
         """比较自定义函数"""
-        # TODO: 实现自定义函数比较逻辑
-        pass
+        return self.function_comparator.compare(comparison_id)
 
     def compare_triggers(self, comparison_id: int) -> List[ComparisonResult]:
         """比较触发器"""
-        # TODO: 实现触发器比较逻辑
-        pass
+        return self.trigger_comparator.compare(comparison_id)
 
     def run_comparison(self, comparison_id: int) -> None:
         """运行完整的数据库比较"""
