@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
-class DbConnectionBase(BaseModel):
+
+class ConnectionBase(BaseModel):
     name: str = Field(..., description="连接名称")
     host: str = Field(..., description="主机地址")
     port: str = Field(..., description="端口")
@@ -11,10 +12,12 @@ class DbConnectionBase(BaseModel):
     database: str = Field(..., description="数据库名")
     description: Optional[str] = Field(None, description="描述")
 
-class DbConnectionCreate(DbConnectionBase):
+
+class ConnectionCreate(ConnectionBase):
     pass
 
-class DbConnectionUpdate(BaseModel):
+
+class ConnectionUpdate(BaseModel):
     name: Optional[str] = None
     host: Optional[str] = None
     port: Optional[str] = None
@@ -23,9 +26,12 @@ class DbConnectionUpdate(BaseModel):
     database: Optional[str] = None
     description: Optional[str] = None
 
-class DbConnectionOut(DbConnectionBase):
+
+class ConnectionOut(ConnectionBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    deleted_at: Optional[datetime] = None
+    deleted: bool = False
 
     model_config = ConfigDict(from_attributes=True)

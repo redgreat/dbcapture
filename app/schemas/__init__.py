@@ -1,16 +1,16 @@
 from .user import User, UserCreate, Token, TokenData
-from .db_connection import DbConnectionCreate, DbConnectionUpdate, DbConnectionOut
-from .comparison import Comparison, ComparisonCreate, ScheduledComparisonCreate
+from .connection import ConnectionCreate, ConnectionUpdate, ConnectionOut
+from .task import Task, TaskCreate, TaskResult
 
 __all__ = [
-    'User',
-    'UserCreate',
-    'Token',
-    'TokenData',
-    'DbConnectionCreate',
-    'DbConnectionUpdate',
-    'DbConnectionOut',
-    'Comparison',
-    'ComparisonCreate',
-    'ScheduledComparisonCreate'
-] 
+    "User",
+    "UserCreate",
+    "Token",
+    "TokenData",
+    "ConnectionCreate",
+    "ConnectionUpdate",
+    "ConnectionOut",
+    "Task",
+    "TaskCreate",
+    "TaskResult",
+]

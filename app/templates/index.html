@@ -301,6 +301,68 @@
             }
         }
 
+        // 提交任务表单
+        async function submitTaskForm() {
+            if (!checkAuth()) return;
+            const form = document.getElementById('createTaskForm');
+            const formData = new FormData(form);
+            
+            // 获取选中的数据库连接信息
+            const sourceConnId = parseInt(formData.get('source_conn_id'));
+            const targetConnId = parseInt(formData.get('target_conn_id'));
+            
+            // 从连接列表中获取对应的连接信息
+            const connections = await fetch('/api/v1/connections', {
+                headers: getHeaders()
+            }).then(res => res.json());
+            
+            const sourceConn = connections.find(conn => conn.id === sourceConnId);
+            const targetConn = connections.find(conn => conn.id === targetConnId);
+            
+            if (!sourceConn || !targetConn) {
+                alert('请选择有效的数据库连接');
+                return;
+            }
+
+            const payload = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                source_conn_id: sourceConnId,
+                target_conn_id: targetConnId,
+                source_conn_name: sourceConn.name,
+                target_conn_name: targetConn.name
+            };
+
+            try {
+                const res = await fetch('/api/v1/tasks', {
+                    method: 'POST',
+                    headers: {
+                        ...getHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert('任务创建成功！');
+                    form.reset();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
+                    modal.hide();
+                    fetchTasks();
+                } else {
+                    alert('创建失败：' + JSON.stringify(data));
+                }
+            } catch (err) {
+                alert('请求异常：' + err);
+            }
+        }
+
         // 创建任务表单提交
         document.getElementById('createForm').onsubmit = async function(e) {
             e.preventDefault();

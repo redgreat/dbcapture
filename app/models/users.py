@@ -1,0 +1,15 @@
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+from .base import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    username: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, comment="用户名"
+    )
+    password_hash: Mapped[str] = mapped_column(
+        String(128), nullable=False, comment="密码哈希"
+    )
+    is_active: Mapped[bool] = mapped_column(default=True, comment="是否激活")

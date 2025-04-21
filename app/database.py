@@ -6,7 +6,7 @@ from app.core.config import settings
 
 # 创建结果数据库引擎
 engine = create_engine(
-    settings.RESULT_DB_URL,
+    settings.DB_URL,
     pool_pre_ping=True,
     pool_recycle=3600,
 )
@@ -17,10 +17,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 创建基类
 Base = declarative_base()
 
+
 # 依赖注入
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
-        db.close() 
+        db.close()
