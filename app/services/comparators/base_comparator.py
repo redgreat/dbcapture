@@ -2,7 +2,7 @@ from typing import Dict, Any, List
 import pymysql
 from sqlalchemy.orm import Session
 
-from app.models.tasks import Result, TaskLog
+from app.models.tasks import Result, TaskLog, TaskStatus
 
 
 def _get_connection(
@@ -34,7 +34,6 @@ class BaseComparator:
         target_definition: str | None = None,
         difference_details: Dict[str, Any] | None = None,
         change_sql: str | None = None,
-        file_path: str | None = None,
     ) -> Result:
         """创建比较结果对象"""
         return Result(
@@ -45,32 +44,39 @@ class BaseComparator:
             target_definition=target_definition,
             difference_details=difference_details,
             change_sql=change_sql,
-            file_path=file_path,
         )
 
-    def compare(self, task_log_id: int) -> List[Result]:
+    def compare(self, task_log_id: int, report_path: str = None) -> List[Result]:
         """执行比较"""
         task_log = self.db.query(TaskLog).get(task_log_id)
         if not task_log:
             raise ValueError(f"任务日志 {task_log_id} 不存在")
+        # 如果指定了报告路径，则写入task_log.result_url
+        if report_path:
+            task_log.result_url = report_path
+            self.db.commit()
 
-        # 获取数据库连接信息
-        source_conn = task_log.source_conn
-        target_conn = task_log.target_conn
+        # 通过 task_log 找到对应 Task，再获取数据库连接信息
+        from app.models.tasks import Task
+        task = self.db.query(Task).get(task_log.task_id)
+        if not task:
+            raise ValueError(f"任务 {task_log.task_id} 不存在")
+        source_conn_obj = task.source_conn
+        target_conn_obj = task.target_conn
 
         source_conn = _get_connection(
-            source_conn.host,
-            source_conn.port,
-            source_conn.user,
-            source_conn.password,
-            source_conn.database,
+            source_conn_obj.host,
+            source_conn_obj.port,
+            source_conn_obj.user,
+            source_conn_obj.password,
+            source_conn_obj.database,
         )
         target_conn = _get_connection(
-            target_conn.host,
-            target_conn.port,
-            target_conn.user,
-            target_conn.password,
-            target_conn.database,
+            target_conn_obj.host,
+            target_conn_obj.port,
+            target_conn_obj.user,
+            target_conn_obj.password,
+            target_conn_obj.database,
         )
 
         try:
@@ -79,13 +85,33 @@ class BaseComparator:
             # 保存所有结果
             for result in results:
                 self.db.add(result)
+            # 成功：状态同步到日志
+            task_log.status = TaskStatus.COMPLETED
+            task_log.error_message = None
+            if report_path:
+                task_log.result_url = report_path
             self.db.commit()
 
             return results
 
+        except Exception as e:
+            # 失败：状态同步到日志
+            task_log.status = TaskStatus.FAILED
+            task_log.error_message = str(e)
+            self.db.commit()
+            raise
+
         finally:
-            source_conn.close()
-            target_conn.close()
+            try:
+                if hasattr(source_conn, 'close') and callable(source_conn.close):
+                    source_conn.close()
+            except Exception:
+                pass
+            try:
+                if hasattr(target_conn, 'close') and callable(target_conn.close):
+                    target_conn.close()
+            except Exception:
+                pass
 
     def _do_compare(
         self,

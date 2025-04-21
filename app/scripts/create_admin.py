@@ -6,10 +6,8 @@ from app.core.security import get_password_hash
 def create_admin_user():
     db = SessionLocal()
     try:
-        # 检查是否已存在管理员用户
         admin = db.query(User).filter(User.username == "admin").first()
         if admin:
-            print("管理员用户已存在")
             return
 
         # 创建管理员用户

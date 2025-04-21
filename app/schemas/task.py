@@ -17,9 +17,12 @@ class TaskBase(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     error_message: Optional[str] = None
 
-
-class TaskCreate(TaskBase):
-    pass
+class TaskCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    source_conn_id: int
+    target_conn_id: int
+    config: Optional[Dict[str, Any]] = None
 
 
 class ResultBase(BaseModel):
@@ -49,9 +52,9 @@ class Task(TaskBase):
     source_conn: ConnectionOut
     target_conn: ConnectionOut
     results: Optional[str] = None
-    create_at: datetime
-    update_at: datetime
-    delete_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
     deleted: bool = False
 
     model_config = ConfigDict(from_attributes=True)

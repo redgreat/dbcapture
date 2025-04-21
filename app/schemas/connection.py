@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 class ConnectionBase(BaseModel):
     name: str = Field(..., description="连接名称")
     host: str = Field(..., description="主机地址")
-    port: str = Field(..., description="端口")
+    port: int = Field(..., description="端口")
     user: str = Field(..., description="用户名")
     password: str = Field(..., description="密码")
     database: str = Field(..., description="数据库名")
@@ -20,7 +20,7 @@ class ConnectionCreate(ConnectionBase):
 class ConnectionUpdate(BaseModel):
     name: Optional[str] = None
     host: Optional[str] = None
-    port: Optional[str] = None
+    port: Optional[int] = None
     user: Optional[str] = None
     password: Optional[str] = None
     database: Optional[str] = None

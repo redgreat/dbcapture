@@ -6,6 +6,7 @@ from app.models.tasks import (
     Task,
     Result,
     TaskStatus,
+    TaskLog,
 )
 from app.core.config import settings
 from app.models.connections import Connection
@@ -173,9 +174,21 @@ class DatabaseComparisonService:
             print("differences:", differences)
             print("====[调试结束]====")
 
+            task_log = TaskLog(task_id=comparison_id)
+            self.db.add(task_log)
+            self.db.commit()
+            self.db.refresh(task_log)
+
+            # 通过 task_log.task_id 查询 Task
+            task = self.db.query(Task).get(task_log.task_id)
+            if not task:
+                raise ValueError(f"找不到任务 {task_log.task_id}")
+
+            source_conn = task.source_conn
+            target_conn = task.target_conn
+
             result = Result(
-                task_id=comparison_id,
-                type="CONFIG",
+                task_log_id=task_log.id,
                 object_name="database_config",
                 has_differences=bool(differences),
                 source_definition=str(source_config),
@@ -191,8 +204,17 @@ class DatabaseComparisonService:
             return result
 
         finally:
-            source_conn.close()
-            target_conn.close()
+            # 只关闭pymysql.Connection对象
+            try:
+                if hasattr(source_conn, 'close') and callable(source_conn.close):
+                    source_conn.close()
+            except Exception:
+                pass
+            try:
+                if hasattr(target_conn, 'close') and callable(target_conn.close):
+                    target_conn.close()
+            except Exception:
+                pass
 
     def compare_views(self, comparison_id: int) -> List[Result]:
         """比较视图"""

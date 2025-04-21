@@ -28,7 +28,7 @@ class ReportService:
 
     def generate_html_report(self, task_log: TaskLog) -> Dict[str, Any]:
         """生成HTML报告"""
-        template = self.env.get_template("comparison_report.html")
+        template = self.env.get_template("report.html")
 
         # 准备报告数据
         report_data = self._prepare_report_data(task_log)

@@ -40,24 +40,126 @@
         <div class="tab-content" id="mainTabContent">
             <!-- 任务管理标签页 -->
             <div class="tab-pane fade show active" id="tasks" role="tabpanel">
-                <div class="card mb-4">
-                    <div class="card-header">创建新任务</div>
-                    <div class="card-body">
-                        <form id="createForm" class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">源数据库连接</label>
-                                <select class="form-select" name="source_conn_id" id="source_conn_id" required></select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">目标数据库连接</label>
-                                <select class="form-select" name="target_conn_id" id="target_conn_id" required></select>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">创建任务</button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+    <span></span>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createTaskModal">新增任务</button>
+</div>
+        <!-- 任务日志弹窗 -->
+        <div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="logModalLabel">任务执行日志</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <table class="table table-bordered table-sm">
+                  <thead>
+                    <tr>
+                      <th>任务ID</th>
+                      <th>执行状态</th>
+                      <th>错误信息</th>
+                      <th>执行时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logTable">
+                    <tr><td colspan="5" class="text-center">加载中...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 任务描述弹窗 -->
+        <div class="modal fade" id="descModal" tabindex="-1" aria-labelledby="descModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="descModalLabel">任务描述</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" id="descModalBody"></div>
+            </div>
+          </div>
+        </div>
+        <!-- 编辑任务 Modal -->
+        <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form id="editForm">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="editTaskModalLabel">修改任务</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">任务名称</label>
+                    <input type="text" class="form-control" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">任务描述</label>
+                    <input type="text" class="form-control" name="description">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">源数据库</label>
+                    <input type="text" class="form-control" name="source_conn_name" disabled>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">目标数据库</label>
+                    <input type="text" class="form-control" name="target_conn_name" disabled>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">任务配置（JSON，可选）</label>
+                    <textarea class="form-control" name="config" rows="3" placeholder='{"ignore_tables": ["log"]}'></textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                  <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- 新增任务 Modal -->
+        <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createTaskModalLabel">新增任务</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createForm" class="row g-3">
+  <div class="col-12">
+    <label class="form-label">任务名称</label>
+    <input type="text" class="form-control" name="name" required>
+  </div>
+  <div class="col-12">
+    <label class="form-label">任务描述</label>
+    <input type="text" class="form-control" name="description">
+  </div>
+  <div class="col-12">
+    <label class="form-label">任务配置（JSON，可选）</label>
+    <textarea class="form-control" name="config" rows="3" placeholder='{"ignore_tables": ["log"]}'></textarea>
+  </div>
+          <div class="col-12">
+            <label class="form-label">源数据库连接</label>
+            <select class="form-select" name="source_conn_id" id="source_conn_id" required></select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">目标数据库连接</label>
+            <select class="form-select" name="target_conn_id" id="target_conn_id" required></select>
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary">创建任务</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
                 <div class="card">
                     <div class="card-header">任务列表</div>
                     <div class="card-body">
@@ -65,15 +167,17 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>源库</th>
-                                    <th>目标库</th>
-                                    <th>状态</th>
-                                    <th>操作</th>
+<th>任务名称</th>
+<th>源库</th>
+<th>目标库</th>
+<th>任务描述</th>
+<th>状态</th>
+<th>操作</th>
                                 </tr>
                             </thead>
                             <tbody id="taskTable">
-                                <tr><td colspan="5" class="text-center">加载中...</td></tr>
-                            </tbody>
+<tr><td colspan="7" class="text-center">加载中...</td></tr>
+</tbody>
                         </table>
                     </div>
                 </div>
@@ -81,44 +185,56 @@
 
             <!-- 数据库连接标签页 -->
             <div class="tab-pane fade" id="connections" role="tabpanel">
-                <div class="card mb-4">
-                    <div class="card-header">创建新连接</div>
-                    <div class="card-body">
-                        <form id="createConnectionForm" class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">连接名称</label>
-                                <input type="text" class="form-control" name="name" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">主机地址</label>
-                                <input type="text" class="form-control" name="host" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">端口</label>
-                                <input type="text" class="form-control" name="port" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">数据库名</label>
-                                <input type="text" class="form-control" name="database" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">用户名</label>
-                                <input type="text" class="form-control" name="user" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">密码</label>
-                                <input type="password" class="form-control" name="password" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">描述</label>
-                                <textarea class="form-control" name="description" rows="2"></textarea>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">创建连接</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+    <span></span>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createConnModal">新增连接</button>
+</div>
+<!-- 新增连接 Modal -->
+<div class="modal fade" id="createConnModal" tabindex="-1" aria-labelledby="createConnModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createConnModalLabel">新增数据库连接</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createConnectionForm" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">连接名称</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">主机地址</label>
+            <input type="text" class="form-control" name="host" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">端口</label>
+            <input type="number" class="form-control" name="port" id="port" required value="3306" min="1" max="65535">
+          </div>
+          <div class="col-12">
+            <label class="form-label">数据库名</label>
+            <input type="text" class="form-control" name="database" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-control" name="user" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">密码</label>
+            <input type="password" class="form-control" name="password" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">描述</label>
+            <textarea class="form-control" name="description" rows="2"></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary">创建连接</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
                 <div class="card">
                     <div class="card-header">连接列表</div>
                     <div class="card-body">
@@ -146,303 +262,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // 检查登录状态
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login';
-                return false;
-            }
-            return true;
-        }
-
-        // 获取请求头
-        function getHeaders() {
-            return {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            };
-        }
-
-        // 退出登录
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-
-        // 加载数据库连接列表
-        async function loadDbConnections() {
-            if (!checkAuth()) return;
-            try {
-                const res = await fetch('/api/v1/db-connections', {
-                    headers: getHeaders()
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                const data = await res.json();
-                
-                // 更新任务创建表单的选择框
-                const sourceSelect = document.getElementById('source_conn_id');
-                const targetSelect = document.getElementById('target_conn_id');
-                sourceSelect.innerHTML = '<option value="">请选择源数据库</option>';
-                targetSelect.innerHTML = '<option value="">请选择目标数据库</option>';
-                data.forEach(conn => {
-                    const label = `${conn.name}（${conn.host}:${conn.port}/${conn.database}）`;
-                    sourceSelect.innerHTML += `<option value="${conn.id}">${label}</option>`;
-                    targetSelect.innerHTML += `<option value="${conn.id}">${label}</option>`;
-                });
-
-                // 更新连接列表
-                const tbody = document.getElementById('connectionTable');
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">暂无连接</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = data.map(conn => `
-                    <tr>
-                        <td>${conn.id}</td>
-                        <td>${conn.name}</td>
-                        <td>${conn.host}</td>
-                        <td>${conn.port}</td>
-                        <td>${conn.database}</td>
-                        <td>${conn.user}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick="deleteConnection(${conn.id})">删除</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (err) {
-                console.error('加载数据库连接失败：', err);
-            }
-        }
-
-        // 加载任务列表
-        async function fetchTasks() {
-            if (!checkAuth()) return;
-            try {
-                const res = await fetch('/api/v1/comparisons', {
-                    headers: getHeaders()
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                let data = await res.json();
-                if (!Array.isArray(data)) data = [];
-                const tbody = document.getElementById('taskTable');
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">暂无任务</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = data.map(task => {
-                    const s = task.source_conn;
-                    const t = task.target_conn;
-                    const sLabel = s ? `${s.name}（${s.host}:${s.port}/${s.database}）` : '-';
-                    const tLabel = t ? `${t.name}（${t.host}:${t.port}/${t.database}）` : '-';
-                    return `
-                        <tr class="task-row">
-                            <td>${task.id}</td>
-                            <td>${sLabel}</td>
-                            <td>${tLabel}</td>
-                            <td>${task.status}</td>
-                            <td>
-                                <button class="btn btn-sm btn-success" onclick="runTask(${task.id})">手动执行</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (err) {
-                console.error('加载任务列表失败：', err);
-            }
-        }
-
-        // 运行任务
-        async function runTask(id) {
-            if (!checkAuth()) return;
-            if (!confirm('确定要手动执行此任务吗？')) return;
-            try {
-                const res = await fetch(`/api/v1/comparisons/${id}/run`, {
-                    method: 'POST',
-                    headers: getHeaders()
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                const data = await res.json();
-                alert(data.message || '执行成功');
-                fetchTasks();
-            } catch (err) {
-                alert('执行失败：' + err);
-            }
-        }
-
-        // 删除连接
-        async function deleteConnection(id) {
-            if (!checkAuth()) return;
-            if (!confirm('确定要删除此连接吗？')) return;
-            try {
-                const res = await fetch(`/api/v1/db-connections/${id}`, {
-                    method: 'DELETE',
-                    headers: getHeaders()
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                const data = await res.json();
-                alert(data.message || '删除成功');
-                loadDbConnections();
-            } catch (err) {
-                alert('删除失败：' + err);
-            }
-        }
-
-        // 提交任务表单
-        async function submitTaskForm() {
-            if (!checkAuth()) return;
-            const form = document.getElementById('createTaskForm');
-            const formData = new FormData(form);
-            
-            // 获取选中的数据库连接信息
-            const sourceConnId = parseInt(formData.get('source_conn_id'));
-            const targetConnId = parseInt(formData.get('target_conn_id'));
-            
-            // 从连接列表中获取对应的连接信息
-            const connections = await fetch('/api/v1/connections', {
-                headers: getHeaders()
-            }).then(res => res.json());
-            
-            const sourceConn = connections.find(conn => conn.id === sourceConnId);
-            const targetConn = connections.find(conn => conn.id === targetConnId);
-            
-            if (!sourceConn || !targetConn) {
-                alert('请选择有效的数据库连接');
-                return;
-            }
-
-            const payload = {
-                name: formData.get('name'),
-                description: formData.get('description'),
-                source_conn_id: sourceConnId,
-                target_conn_id: targetConnId,
-                source_conn_name: sourceConn.name,
-                target_conn_name: targetConn.name
-            };
-
-            try {
-                const res = await fetch('/api/v1/tasks', {
-                    method: 'POST',
-                    headers: {
-                        ...getHeaders(),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-
-                const data = await res.json();
-                if (res.ok) {
-                    alert('任务创建成功！');
-                    form.reset();
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
-                    modal.hide();
-                    fetchTasks();
-                } else {
-                    alert('创建失败：' + JSON.stringify(data));
-                }
-            } catch (err) {
-                alert('请求异常：' + err);
-            }
-        }
-
-        // 创建任务表单提交
-        document.getElementById('createForm').onsubmit = async function(e) {
-            e.preventDefault();
-            if (!checkAuth()) return;
-            const form = e.target;
-            const payload = {
-                source_conn_id: parseInt(form.source_conn_id.value),
-                target_conn_id: parseInt(form.target_conn_id.value)
-            };
-            try {
-                const res = await fetch('/api/v1/comparisons', {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(payload)
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                let data;
-                const contentType = res.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    data = await res.json();
-                } else {
-                    data = await res.text();
-                }
-                if (res.ok) {
-                    alert('任务创建成功！');
-                    form.reset();
-                    fetchTasks();
-                } else {
-                    alert('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
-                }
-            } catch (err) {
-                alert('请求异常：' + err);
-            }
-        };
-
-        // 创建连接表单提交
-        document.getElementById('createConnectionForm').onsubmit = async function(e) {
-            e.preventDefault();
-            if (!checkAuth()) return;
-            const form = e.target;
-            const payload = {
-                name: form.name.value,
-                host: form.host.value,
-                port: form.port.value,
-                database: form.database.value,
-                user: form.user.value,
-                password: form.password.value,
-                description: form.description.value
-            };
-            try {
-                const res = await fetch('/api/v1/db-connections', {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(payload)
-                });
-                if (res.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                const data = await res.json();
-                if (res.ok) {
-                    alert('连接创建成功！');
-                    form.reset();
-                    loadDbConnections();
-                } else {
-                    alert('创建失败：' + JSON.stringify(data));
-                }
-            } catch (err) {
-                alert('请求异常：' + err);
-            }
-        };
-
-        // 初始化加载
-        if (checkAuth()) {
-            fetchTasks();
-            loadDbConnections();
-        }
-    </script>
+    <script src="/static/js/index.js"></script>
+    <script src="/static/js/executeTask.js"></script>
 </body>
-</html> 
+</html>

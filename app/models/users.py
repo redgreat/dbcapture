@@ -1,4 +1,5 @@
-from sqlalchemy import String
+from sqlalchemy import String, BigInteger
+from sqlalchemy.dialects.mysql import BIGINT as MYSQL_BIGINT
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
@@ -6,6 +7,12 @@ from .base import Base
 class User(Base):
     __tablename__ = "users"
 
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
+        primary_key=True,
+        autoincrement=True,
+        comment="自增主键"
+    )
     username: Mapped[str] = mapped_column(
         String(64), nullable=False, unique=True, comment="用户名"
     )

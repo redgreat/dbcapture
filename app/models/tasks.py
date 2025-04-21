@@ -6,14 +6,13 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     Integer,
-    DateTime,
+    BigInteger,
 )
+from sqlalchemy.dialects.mysql import BIGINT as MYSQL_BIGINT
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from datetime import datetime
 import enum
 
 from .base import Base
-from .connections import Connection
 
 
 class TaskStatus(enum.Enum):
@@ -28,27 +27,37 @@ class Task(Base):
 
     __tablename__ = "tasks"
 
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
+        primary_key=True,
+        autoincrement=True,
+        comment="自增主键"
+    )
+    name: Mapped[str] = mapped_column(
+        String(50), nullable=False, unique=True, comment="任务名称"
+    )
+    description: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, comment="任务描述"
+    )
     source_conn_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
         ForeignKey("connections.id"),
         nullable=False,
         comment="源数据库连接ID",
     )
     source_conn_name: Mapped[str | None] = mapped_column(
         String(50),
-        ForeignKey("connections.id"),
         nullable=False,
         comment="源数据库连接名称",
     )
     target_conn_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
         ForeignKey("connections.id"),
         nullable=False,
         comment="目标数据库连接ID",
     )
     target_conn_name: Mapped[str | None] = mapped_column(
         String(50),
-        ForeignKey("connections.id"),
         nullable=False,
         comment="目标数据库连接名称",
     )
@@ -58,7 +67,8 @@ class Task(Base):
         comment="比较配置（忽略项等）",
     )
     status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus), default=TaskStatus.PENDING
+        Enum(TaskStatus), default=TaskStatus.PENDING,
+        comment="任务状态"
     )
 
     # 关系定义
@@ -74,9 +84,6 @@ class Task(Base):
         primaryjoin="Task.target_conn_id==Connection.id",
         uselist=False,
     )
-    results: Mapped[list["TaskStatus"]] = relationship(
-        "TaskStatus", back_populates="task"
-    )
 
 
 class TaskLog(Base):
@@ -84,8 +91,14 @@ class TaskLog(Base):
 
     __tablename__ = "task_logs"
 
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
+        primary_key=True,
+        autoincrement=True,
+        comment="自增主键"
+    )
     task_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
         ForeignKey("tasks.id"),
         nullable=False,
         comment="任务信息表ID",
@@ -96,6 +109,9 @@ class TaskLog(Base):
     error_message: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="错误信息"
     )
+    result_url: Mapped[str | None] = mapped_column(
+        String(200), nullable=True, comment="报告文件路径"
+    )
 
     # 关系定义
     task = relationship(
@@ -104,9 +120,6 @@ class TaskLog(Base):
         primaryjoin="TaskLog.task_id==Task.id",
         uselist=False,
     )
-    results: Mapped[list["TaskStatus"]] = relationship(
-        "TaskStatus", back_populates="task"
-    )
 
 
 class Result(Base):
@@ -114,8 +127,14 @@ class Result(Base):
 
     __tablename__ = "results"
 
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
+        primary_key=True,
+        autoincrement=True,
+        comment="自增主键"
+    )
     task_log_id: Mapped[int] = mapped_column(
-        Integer,
+        BigInteger().with_variant(MYSQL_BIGINT(unsigned=True), "mysql"),
         ForeignKey("task_logs.id"),
         nullable=False,
         comment="任务执行日志表Id",
@@ -139,9 +158,6 @@ class Result(Base):
     )
     change_sql: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="变更SQL"
-    )
-    file_path: Mapped[str | None] = mapped_column(
-        String(200), nullable=True, comment="差异文件路径"
     )
 
     # 关系定义

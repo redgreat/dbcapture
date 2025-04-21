@@ -1,0 +1,35 @@
+<!-- 任务编辑弹窗 -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTaskModalLabel">修改任务</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">任务名称</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">任务描述</label>
+            <input type="text" class="form-control" name="description">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">源数据库</label>
+            <input type="text" class="form-control" name="source_conn_name" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">目标数据库</label>
+            <input type="text" class="form-control" name="target_conn_name" disabled>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
