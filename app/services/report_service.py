@@ -20,9 +20,9 @@ class ReportService:
         """生成比较报告"""
         reports = []
 
-        if settings.HTML_ENABLED:
-            html_report = self.generate_html_report(task_log)
-            reports.append(html_report)
+        # 直接生成 HTML 报告（不再判断 settings.HTML_ENABLED）
+        html_report = self.generate_html_report(task_log)
+        reports.append(html_report)
 
         return reports
 

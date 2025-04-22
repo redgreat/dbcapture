@@ -1,3 +1,29 @@
+// 右下角toast弹窗
+function showWarningToast(msg) {
+    let toast = document.getElementById('toast-warning');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-warning';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '30px';
+        toast.style.right = '30px';
+        toast.style.zIndex = 9999;
+        toast.style.background = 'rgba(255,193,7,0.95)';
+        toast.style.color = '#222';
+        toast.style.padding = '14px 28px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
+        toast.style.fontSize = '16px';
+        toast.style.display = 'none';
+        document.body.appendChild(toast);
+    }
+    toast.innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3500);
+}
+
 // 检查登录状态
 function checkAuth() {
     const token = localStorage.getItem('token');
@@ -55,7 +81,7 @@ async function loadDbConnections() {
             });
         }
     } catch (err) {
-        alert('请求异常：' + err);
+        showWarningToast('请求异常：' + err);
     }
 }
 
@@ -79,6 +105,10 @@ async function fetchTasks() {
             data.forEach(task => {
                 const desc = task.description || '';
                 const shortDesc = desc.length > 10 ? desc.slice(0, 10) + '...' : desc;
+                let reportBtn = '';
+                if (task.status === 'completed' && task.result_url) {
+                    reportBtn = `<a href="${task.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>`;
+                }
                 tbody.innerHTML += `<tr>
                     <td>${task.id}</td>
                     <td>${task.name || ''}</td>
@@ -102,43 +132,72 @@ async function fetchTasks() {
 )">修改</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">删除</button>
                         <button class="btn btn-secondary btn-sm" onclick="showTaskLogs(${task.id})">日志</button>
+                        ${reportBtn}
                     </td>
                 </tr>`;
             });
         }
     } catch (err) {
-        alert('请求异常：' + err);
+        showWarningToast('请求异常：' + err);
     }
 }
 
 // 任务日志弹窗逻辑
-async function showTaskLogs(taskId) {
+async function showTaskLogs(taskId, page = 1, pageSize = 20) {
     const modal = new bootstrap.Modal(document.getElementById('logModal'));
-    document.getElementById('logTable').innerHTML = '<tr><td colspan="5" class="text-center">加载中...</td></tr>';
+    document.getElementById('logTable').innerHTML = '';
     modal.show();
     try {
-        const res = await fetch(`/api/v1/task_logs?task_id=${taskId}`);
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) {
-            document.getElementById('logTable').innerHTML = '<tr><td colspan="5" class="text-center">暂无日志</td></tr>';
+        const res = await fetch(`/api/v1/task_logs?task_id=${taskId}&page=${page}&page_size=${pageSize}`);
+        const result = await res.json();
+        const items = result.items || [];
+        const total = result.total || 0;
+        if (!Array.isArray(items) || items.length === 0) {
+            document.getElementById('logTable').innerHTML += '<tr><td colspan="4" class="text-center">暂无日志</td></tr>';
         } else {
-            document.getElementById('logTable').innerHTML = '';
-            data.forEach(log => {
+            items.forEach(log => {
                 const err = log.error_message ? log.error_message.replace(/'/g, '&apos;').replace(/"/g, '&quot;') : '';
-                const reportBtn = log.result_url ? `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>` : '';
+                const reportBtn = (log.status === 'completed' && log.result_url) ? `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>` : '';
                 document.getElementById('logTable').innerHTML += `<tr>
-                    <td>${log.task_id}</td>
+                    <td>${log.created_at ? log.created_at.replace('T', ' ').slice(0, 19) : ''}</td>
                     <td>${log.status}</td>
                     <td title="${err}">${err.length > 20 ? err.slice(0, 20) + '...' : err}</td>
-                    <td>${log.created_at ? log.created_at.replace('T', ' ').slice(0, 19) : ''}</td>
                     <td>${reportBtn}</td>
                 </tr>`;
             });
         }
+        renderLogPagination(taskId, page, pageSize, total);
     } catch (e) {
-        document.getElementById('logTable').innerHTML = '<tr><td colspan="5" class="text-center text-danger">加载失败</td></tr>';
+        document.getElementById('logTable').innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载失败</td></tr>';
+        document.getElementById('logPagination').innerHTML = '';
     }
 }
+
+window.showTaskLogs = showTaskLogs;
+function renderLogPagination(taskId, page, pageSize, total) {
+    const totalPages = Math.ceil(total / pageSize);
+    let html = '';
+    if (totalPages <= 1) {
+        document.getElementById('logPagination').innerHTML = '';
+        return;
+    }
+    // 上一页
+    html += `<li class="page-item${page === 1 ? ' disabled' : ''}"><a class="page-link" href="#" onclick="showTaskLogs(${taskId}, ${page-1}, ${pageSize});return false;">上一页</a></li>`;
+    // 页码
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === page || (i <= 2 || i > totalPages - 2 || Math.abs(i - page) <= 1)) {
+            html += `<li class="page-item${i === page ? ' active' : ''}"><a class="page-link" href="#" onclick="showTaskLogs(${taskId}, ${i}, ${pageSize});return false;">${i}</a></li>`;
+        } else if (i === 3 && page > 4) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        } else if (i === totalPages - 2 && page < totalPages - 3) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    // 下一页
+    html += `<li class="page-item${page === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" onclick="showTaskLogs(${taskId}, ${page+1}, ${pageSize});return false;">下一页</a></li>`;
+    document.getElementById('logPagination').innerHTML = html;
+}
+
 
 // 任务编辑弹窗逻辑
 function showEditTaskModal(id, name, description, sourceConnName, targetConnName, sourceConnId, targetConnId, config) {
@@ -187,7 +246,7 @@ if (document.getElementById('editForm')) {
             try {
                 configObj = JSON.parse(config);
             } catch (e) {
-                alert('任务配置必须是合法的JSON格式！');
+                showWarningToast('任务配置必须是合法的JSON格式！');
                 return;
             }
         }
@@ -206,14 +265,15 @@ if (document.getElementById('editForm')) {
             });
             if (res.status === 400) {
                 const data = await res.json();
-                alert(data.detail || '任务名称已存在');
+                showWarningToast(data.detail || '任务名称已存在');
                 return;
             }
             if (!res.ok) throw new Error('修改失败');
             bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
             fetchTasks();
+            showWarningToast('任务修改成功');
         } catch (e) {
-            alert('修改失败: ' + (e.message || e));
+            showWarningToast('修改失败：' + (e.message || e));
         }
     }
 }
@@ -238,7 +298,7 @@ if (document.getElementById('createForm')) {
             try {
                 configObj = JSON.parse(config);
             } catch (e) {
-                alert('任务配置必须是合法的JSON格式！');
+                showWarningToast('任务配置必须是合法的JSON格式！');
                 return;
             }
         }
@@ -268,7 +328,7 @@ if (document.getElementById('createForm')) {
                 data = await res.text();
             }
             if (res.ok) {
-                alert('任务创建成功！');
+                showWarningToast('任务创建成功！');
                 form.reset();
                 // 关闭模态框
                 let modalEl = document.getElementById('createTaskModal');
@@ -279,10 +339,10 @@ if (document.getElementById('createForm')) {
                 }
                 fetchTasks();
             } else {
-                alert('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
+                showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
             }
         } catch (err) {
-            alert('请求异常：' + err);
+            showWarningToast('请求异常：' + err);
         }
     };
 }
@@ -331,7 +391,7 @@ if (document.getElementById('createConnectionForm')) {
                 data = await res.text();
             }
             if (res.ok) {
-                alert('连接创建成功！');
+                showWarningToast('连接创建成功！');
                 form.reset();
                 form.port.value = 3306;
                 // 关闭模态框
@@ -345,13 +405,13 @@ if (document.getElementById('createConnectionForm')) {
             } else {
                 // 针对唯一约束错误友好提示
                 if (typeof data === 'string' && data.includes('Duplicate entry')) {
-                    alert('创建失败：连接名称已存在，请更换名称。');
+                    showWarningToast('创建失败：连接名称已存在，请更换名称。');
                 } else {
-                    alert('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
+                    showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
                 }
             }
         } catch (err) {
-            alert('请求异常：' + err);
+            showWarningToast('请求异常：' + err);
         }
     };
 }
@@ -366,11 +426,12 @@ async function deleteTask(taskId) {
         });
         if (res.ok) {
             fetchTasks();
+            showWarningToast('任务删除成功');
         } else {
-            alert('删除失败');
+            showWarningToast('删除失败');
         }
     } catch (err) {
-        alert('请求异常：' + err);
+        showWarningToast('请求异常：' + err);
     }
 }
 
@@ -385,10 +446,10 @@ async function deleteConnection(connId) {
         if (res.ok) {
             loadDbConnections();
         } else {
-            alert('删除失败');
+            showWarningToast('删除失败');
         }
     } catch (err) {
-        alert('请求异常：' + err);
+        showWarningToast('请求异常：' + err);
     }
 }
 

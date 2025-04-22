@@ -18,7 +18,7 @@ from app.services.comparators import (
     TriggerComparator,
 )
 from app.schemas.task import TaskCreate
-
+from app.services.report_service import ReportService
 
 def _get_database_config(conn: pymysql.Connection) -> Dict[str, Any]:
     """获取数据库配置信息"""
@@ -108,6 +108,7 @@ class DatabaseComparisonService:
         self.procedure_comparator = ProcedureComparator(db)
         self.function_comparator = FunctionComparator(db)
         self.trigger_comparator = TriggerComparator(db)
+        self.report_service = ReportService()
 
     def create_task(self, task_data: TaskCreate) -> Task:
         """创建新的数据库比较任务"""
@@ -134,13 +135,22 @@ class DatabaseComparisonService:
         self.db.add(task)
         self.db.commit()
         self.db.refresh(task)
+
+        task_log = TaskLog(task_id=task.id, status=TaskStatus.RUNNING)
+        self.db.add(task_log)
+        self.db.commit()
+        self.db.refresh(task_log)
+
         return task
 
-    def compare_database_config(self, comparison_id: int) -> Result:
+    def compare_database_config(self, task_log_id: int) -> Result:
         """比较数据库配置"""
-        task = self.db.query(Task).get(comparison_id)
+        task_log = self.db.query(TaskLog).get(task_log_id)
+        if not task_log:
+            raise ValueError(f"任务日志 {task_log_id} 不存在")
+        task = self.db.query(Task).get(task_log.task_id)
         if not task:
-            raise ValueError(f"比较任务 {comparison_id} 不存在")
+            raise ValueError(f"比较任务 {task_log.task_id} 不存在")
 
         # 获取数据库连接信息
         source_conn = task.source_conn
@@ -174,21 +184,13 @@ class DatabaseComparisonService:
             print("differences:", differences)
             print("====[调试结束]====")
 
-            task_log = TaskLog(task_id=comparison_id)
-            self.db.add(task_log)
-            self.db.commit()
-            self.db.refresh(task_log)
-
-            # 通过 task_log.task_id 查询 Task
-            task = self.db.query(Task).get(task_log.task_id)
-            if not task:
-                raise ValueError(f"找不到任务 {task_log.task_id}")
-
-            source_conn = task.source_conn
-            target_conn = task.target_conn
+            task_log = self.db.query(TaskLog).get(task_log_id)
+            if not task_log:
+                raise ValueError(f"任务日志 {task_log_id} 不存在")
+            task_id = task_log.task_id
 
             result = Result(
-                task_log_id=task_log.id,
+                task_log_id=task_log_id,
                 object_name="database_config",
                 has_differences=bool(differences),
                 source_definition=str(source_config),
@@ -216,33 +218,34 @@ class DatabaseComparisonService:
             except Exception:
                 pass
 
-    def compare_views(self, comparison_id: int) -> List[Result]:
+    def compare_views(self, task_log_id: int) -> List[Result]:
         """比较视图"""
-        return self.view_comparator.compare(comparison_id)
+        return self.view_comparator.compare(task_log_id)
 
-    def compare_table_structure(self, comparison_id: int) -> List[Result]:
+    def compare_table_structure(self, task_log_id: int) -> List[Result]:
         """比较表结构"""
-        return self.table_comparator.compare(comparison_id)
+        return self.table_comparator.compare(task_log_id)
 
-    def compare_procedures(self, comparison_id: int) -> List[Result]:
+    def compare_procedures(self, task_log_id: int) -> List[Result]:
         """比较存储过程"""
-        return self.procedure_comparator.compare(comparison_id)
+        return self.procedure_comparator.compare(task_log_id)
 
-    def compare_functions(self, comparison_id: int) -> List[Result]:
+    def compare_functions(self, task_log_id: int) -> List[Result]:
         """比较自定义函数"""
-        return self.function_comparator.compare(comparison_id)
+        return self.function_comparator.compare(task_log_id)
 
-    def compare_triggers(self, comparison_id: int) -> List[Result]:
+    def compare_triggers(self, task_log_id: int) -> List[Result]:
         """比较触发器"""
-        return self.trigger_comparator.compare(comparison_id)
+        return self.trigger_comparator.compare(task_log_id)
 
-    def run_comparison(self, comparison_id: int) -> None:
+    def run_comparison(self, task_log_id: int) -> None:
         """运行完整的数据库比较"""
-        print(f"====[开始执行比较任务 {comparison_id}]====")
-        task = self.db.query(Task).get(comparison_id)
+        task_log = self.db.query(TaskLog).get(task_log_id)
+        print(f"====[开始执行比较任务 {task_log_id}]====")
+        task = self.db.query(Task).get(task_log.task_id)
         if not task:
-            print(f"错误：找不到比较任务 {comparison_id}")
-            raise ValueError(f"比较任务 {comparison_id} 不存在")
+            print(f"错误：找不到比较任务 {task_log.task_id}")
+            raise ValueError(f"比较任务 {task_log.task_id} 不存在")
 
         print(f"任务状态：{task.status}")
         task.status = TaskStatus.RUNNING
@@ -251,28 +254,37 @@ class DatabaseComparisonService:
 
         try:
             print("开始执行数据库配置比较...")
-            self.compare_database_config(comparison_id)
+            self.compare_database_config(task_log_id)
             print("数据库配置比较完成")
 
             print("开始执行表结构比较...")
-            self.compare_table_structure(comparison_id)
+            self.compare_table_structure(task_log_id)
             print("表结构比较完成")
 
             print("开始执行视图比较...")
-            self.compare_views(comparison_id)
+            self.compare_views(task_log_id)
             print("视图比较完成")
 
             print("开始执行存储过程比较...")
-            self.compare_procedures(comparison_id)
+            self.compare_procedures(task_log_id)
             print("存储过程比较完成")
 
             print("开始执行函数比较...")
-            self.compare_functions(comparison_id)
+            self.compare_functions(task_log_id)
             print("函数比较完成")
 
             print("开始执行触发器比较...")
-            self.compare_triggers(comparison_id)
+            self.compare_triggers(task_log_id)
             print("触发器比较完成")
+
+            print("开始生成报告...")
+            reports = self.report_service.generate_reports(task_log)
+            if reports:
+                report_path = reports[0].get('file_path')
+                if report_path:
+                    task_log.result_url = report_path
+                    self.db.commit()
+            print("报告生成并已写入日志")
 
             task.status = TaskStatus.COMPLETED
             print("所有比较完成，更新状态为COMPLETED")

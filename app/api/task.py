@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List
 from sqlalchemy.orm import Session
 from app.models.tasks import Task, TaskLog
@@ -23,18 +23,31 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     return task
 
 @router.get("/task_logs")
-def get_task_logs(task_id: int = Query(...), db: Session = Depends(get_db)):
-    logs = db.query(TaskLog).filter(TaskLog.task_id == task_id).order_by(TaskLog.id.desc()).all()
-    result = []
-    for log in logs:
-        result.append({
+def get_task_logs(
+    task_id: int = Query(...),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    query = db.query(TaskLog).filter(TaskLog.task_id == task_id)
+    total = query.count()
+    logs = (
+        query.order_by(TaskLog.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    result = [
+        {
             'task_id': log.task_id,
             'status': log.status.value if hasattr(log.status, 'value') else str(log.status),
             'error_message': log.error_message,
             'created_at': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if hasattr(log, 'created_at') and log.created_at else '',
             'result_url': log.result_url
-        })
-    return JSONResponse(content=result)
+        }
+        for log in logs
+    ]
+    return JSONResponse(content={"total": total, "items": result})
 
 @router.post("/tasks", response_model=task_schemas.Task)
 def create_task(task_in: task_schemas.TaskCreate, db: Session = Depends(get_db)):
@@ -93,15 +106,22 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     return {"message": "Task deleted"}
 
 
+# 推荐使用异步接口（见 task_execute_async.py）
+# 保留原接口，但仅作兼容用途
 @router.post("/tasks/{task_id}/execute")
-def execute_task(task_id: int, db: Session = Depends(get_db)):
-    """执行数据库对比，生成报告"""
+def execute_task(task_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """执行数据库对比，生成报告（异步）"""
     task = db.query(Task).get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    # 后台异步执行
+    background_tasks.add_task(_run_comparison_and_notify, task_id)
+    return {"message": "任务已提交执行，报告生成中。"}
+
+def _run_comparison_and_notify(task_id: int):
+    db = next(get_db())
     try:
         comparison_service = DatabaseComparisonService(db)
         comparison_service.run_comparison(task_id)
-        return {"message": "任务已提交执行，报告生成中。"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"执行失败: {str(e)}")
+    finally:
+        db.close()

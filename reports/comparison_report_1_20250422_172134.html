@@ -93,13 +93,11 @@
     <div class="container">
         <div class="header">
             <h1>数据库对比报告</h1>
-            <p>报告生成时间：{{ task.created_at }}</p>
-            <p>源数据库：{{ task.source_database }}</p>
-            <p>目标数据库：{{ task.target_database }}</p>
-            <p>状态：<span class="status status-{{ task.status }}">{{ task.status }}</span></p>
-            {% if task.error_message %}
-            <p>错误信息：{{ task.error_message }}</p>
-            {% endif %}
+            <p>报告生成时间：2025-04-21 16:11:26</p>
+            <p>源数据库：pc-bp1zip05gl1b1ga3veo.rwlb.rds.aliyuncs.com:3306/serviceordercenter</p>
+            <p>目标数据库：pc-bp1zip05gl1b1ga3veo.rwlb.rds.aliyuncs.com:3306/serviceordercenterhis</p>
+            <p>状态：<span class="status status-completed">completed</span></p>
+            
         </div>
 
         <div class="summary">
@@ -107,72 +105,52 @@
             <table>
                 <tr>
                     <th>总对象数</th>
-                    <td>{{ summary.total_objects }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>总差异数</th>
-                    <td>{{ summary.total_differences }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>配置差异</th>
-                    <td>{{ summary.differences_by_type.config }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>表结构差异</th>
-                    <td>{{ summary.differences_by_type.table }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>视图差异</th>
-                    <td>{{ summary.differences_by_type.view }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>存储过程差异</th>
-                    <td>{{ summary.differences_by_type.procedure }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>函数差异</th>
-                    <td>{{ summary.differences_by_type.function }}</td>
+                    <td>0</td>
                 </tr>
                 <tr>
                     <th>触发器差异</th>
-                    <td>{{ summary.differences_by_type.trigger }}</td>
+                    <td>0</td>
                 </tr>
             </table>
         </div>
 
-        {% for type, items in results.items() %}
-        {% if items %}
-        <div class="section">
-            <h2 class="section-title">{{ type|title }} 差异</h2>
-            {% for item in items %}
-            {% if item.has_differences %}
-            <div class="diff-item">
-                <h4>{{ item.object_name }}</h4>
-                {% if item.difference_details %}
-                <div class="diff-details">
-                    {% if type == 'table' %}
-                        {% if item.difference_details is string %}
-                            {{ item.difference_details }}
-                        {% else %}
-                            <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
-                        {% endif %}
-                    {% else %}
-                        {{ item.difference_details.message }}
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if item.change_sql and type == 'table' %}
-                <h4>变更SQL:</h4>
-                <div class="sql-code">
-                    <pre>{{ item.change_sql }}</pre>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endfor %}
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     </div>
 </body>
 </html> 

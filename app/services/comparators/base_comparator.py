@@ -51,10 +51,6 @@ class BaseComparator:
         task_log = self.db.query(TaskLog).get(task_log_id)
         if not task_log:
             raise ValueError(f"任务日志 {task_log_id} 不存在")
-        # 如果指定了报告路径，则写入task_log.result_url
-        if report_path:
-            task_log.result_url = report_path
-            self.db.commit()
 
         # 通过 task_log 找到对应 Task，再获取数据库连接信息
         from app.models.tasks import Task
