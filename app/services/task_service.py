@@ -252,6 +252,8 @@ class DatabaseComparisonService:
         self.db.commit()
         print("已更新任务状态为RUNNING")
 
+        print(f'开始执行数据库配置比较，使用LogId：{task_log_id}')
+
         try:
             print("开始执行数据库配置比较...")
             self.compare_database_config(task_log_id)

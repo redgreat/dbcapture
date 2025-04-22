@@ -34,6 +34,8 @@ app = FastAPI(
 
 # 挂载静态文件
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# 挂载报告文件目录
+app.mount("/reports", StaticFiles(directory=settings.REPORT_OUTPUT_DIR), name="reports")
 
 # 配置模板
 templates = Jinja2Templates(directory="app/templates")
