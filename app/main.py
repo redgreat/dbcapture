@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from app.core.config import settings
-from app.models.tasks import Task
+from app.models.tasks import Task, TaskLog
 from app.models.connections import Connection
 from app.models.users import User
 from app.database import engine, SessionLocal
@@ -22,6 +22,7 @@ def get_db():
 User.metadata.create_all(bind=engine)
 Connection.metadata.create_all(bind=engine)
 Task.metadata.create_all(bind=engine)
+TaskLog.metadata.create_all(bind=engine)
 
 # 初始化admin用户
 create_admin_user()

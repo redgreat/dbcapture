@@ -21,4 +21,4 @@ drop table if exists connections;
 drop table if exists users;
 
 # 添加任务名称字段
-alembic revision --autogenerate -m "modify_result_url" && alembic upgrade head
+alembic revision --autogenerate -m "add_result_type" && alembic upgrade head

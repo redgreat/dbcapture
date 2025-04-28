@@ -1,29 +1,3 @@
-// 右下角toast弹窗
-function showWarningToast(msg) {
-    let toast = document.getElementById('toast-warning');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toast-warning';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '30px';
-        toast.style.right = '30px';
-        toast.style.zIndex = 9999;
-        toast.style.background = 'rgba(255,193,7,0.95)';
-        toast.style.color = '#222';
-        toast.style.padding = '14px 28px';
-        toast.style.borderRadius = '8px';
-        toast.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
-        toast.style.fontSize = '16px';
-        toast.style.display = 'none';
-        document.body.appendChild(toast);
-    }
-    toast.innerText = msg;
-    toast.style.display = 'block';
-    setTimeout(() => {
-        toast.style.display = 'none';
-    }, 3500);
-}
-
 // 检查登录状态
 function checkAuth() {
     const token = localStorage.getItem('token');
@@ -81,7 +55,7 @@ async function loadDbConnections() {
             });
         }
     } catch (err) {
-        showWarningToast('请求异常：' + err);
+        showWarningToast('请求异常：' + err, 'error');
     }
 }
 
@@ -138,12 +112,12 @@ async function fetchTasks() {
             });
         }
     } catch (err) {
-        showWarningToast('请求异常：' + err);
+        showWarningToast('请求异常：' + err, 'error');
     }
 }
 
 // 任务日志弹窗逻辑
-async function showTaskLogs(taskId, page = 1, pageSize = 20) {
+async function showTaskLogs(taskId, page = 1, pageSize = 10) {
     const modal = new bootstrap.Modal(document.getElementById('logModal'));
     document.getElementById('logTable').innerHTML = '';
     modal.show();
@@ -174,6 +148,7 @@ async function showTaskLogs(taskId, page = 1, pageSize = 20) {
 }
 
 window.showTaskLogs = showTaskLogs;
+const pageSize = 10;
 function renderLogPagination(taskId, page, pageSize, total) {
     const totalPages = Math.ceil(total / pageSize);
     let html = '';
@@ -246,7 +221,7 @@ if (document.getElementById('editForm')) {
             try {
                 configObj = JSON.parse(config);
             } catch (e) {
-                showWarningToast('任务配置必须是合法的JSON格式！');
+                showWarningToast('任务配置必须是合法的JSON格式！', 'error');
                 return;
             }
         }
@@ -265,15 +240,15 @@ if (document.getElementById('editForm')) {
             });
             if (res.status === 400) {
                 const data = await res.json();
-                showWarningToast(data.detail || '任务名称已存在');
+                showWarningToast(data.detail || '任务名称已存在', 'error');
                 return;
             }
             if (!res.ok) throw new Error('修改失败');
             bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
             fetchTasks();
-            showWarningToast('任务修改成功');
+            showWarningToast('任务修改成功', 'success');
         } catch (e) {
-            showWarningToast('修改失败：' + (e.message || e));
+            showWarningToast('修改失败：' + (e.message || e), 'error');
         }
     }
 }
@@ -298,7 +273,7 @@ if (document.getElementById('createForm')) {
             try {
                 configObj = JSON.parse(config);
             } catch (e) {
-                showWarningToast('任务配置必须是合法的JSON格式！');
+                showWarningToast('任务配置必须是合法的JSON格式！', 'error');
                 return;
             }
         }
@@ -328,7 +303,7 @@ if (document.getElementById('createForm')) {
                 data = await res.text();
             }
             if (res.ok) {
-                showWarningToast('任务创建成功！');
+                showWarningToast('任务创建成功！', 'success');
                 form.reset();
                 // 关闭模态框
                 let modalEl = document.getElementById('createTaskModal');
@@ -339,10 +314,10 @@ if (document.getElementById('createForm')) {
                 }
                 fetchTasks();
             } else {
-                showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
+                showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)), 'error');
             }
         } catch (err) {
-            showWarningToast('请求异常：' + err);
+            showWarningToast('请求异常：' + err, 'error');
         }
     };
 }
@@ -391,7 +366,7 @@ if (document.getElementById('createConnectionForm')) {
                 data = await res.text();
             }
             if (res.ok) {
-                showWarningToast('连接创建成功！');
+                showWarningToast('连接创建成功！', 'success');
                 form.reset();
                 form.port.value = 3306;
                 // 关闭模态框
@@ -405,13 +380,13 @@ if (document.getElementById('createConnectionForm')) {
             } else {
                 // 针对唯一约束错误友好提示
                 if (typeof data === 'string' && data.includes('Duplicate entry')) {
-                    showWarningToast('创建失败：连接名称已存在，请更换名称。');
+                    showWarningToast('创建失败：连接名称已存在，请更换名称。', 'error');
                 } else {
-                    showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)));
+                    showWarningToast('创建失败：' + (typeof data === 'string' ? data : JSON.stringify(data)), 'error');
                 }
             }
         } catch (err) {
-            showWarningToast('请求异常：' + err);
+            showWarningToast('请求异常：' + err, 'error');
         }
     };
 }
@@ -426,12 +401,12 @@ async function deleteTask(taskId) {
         });
         if (res.ok) {
             fetchTasks();
-            showWarningToast('任务删除成功');
+            showWarningToast('任务删除成功', 'success');
         } else {
-            showWarningToast('删除失败');
+            showWarningToast('删除失败', 'error');
         }
     } catch (err) {
-        showWarningToast('请求异常：' + err);
+        showWarningToast('请求异常：' + err, 'error');
     }
 }
 
@@ -446,10 +421,10 @@ async function deleteConnection(connId) {
         if (res.ok) {
             loadDbConnections();
         } else {
-            showWarningToast('删除失败');
+            showWarningToast('删除失败', 'error');
         }
     } catch (err) {
-        showWarningToast('请求异常：' + err);
+        showWarningToast('请求异常：' + err, 'error');
     }
 }
 
@@ -458,3 +433,5 @@ if (checkAuth()) {
     fetchTasks();
     loadDbConnections();
 }
+
+

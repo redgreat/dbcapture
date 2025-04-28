@@ -22,6 +22,15 @@ class TaskStatus(enum.Enum):
     FAILED = "failed"
 
 
+class ResultType(enum.Enum):
+    CONFIG = "config"
+    TABLE = "table"
+    VIEW = "view"
+    PROCEDURE = "procedure"
+    FUNCTION = "function"
+    TRIGGER = "trigger"
+
+
 class Task(Base):
     """数据库比较任务主表"""
 
@@ -120,6 +129,11 @@ class TaskLog(Base):
         primaryjoin="TaskLog.task_id==Task.id",
         uselist=False,
     )
+    results = relationship(
+        "app.models.tasks.Result",
+        back_populates="task_log",
+        cascade="all, delete-orphan"
+    )
 
 
 class Result(Base):
@@ -138,6 +152,9 @@ class Result(Base):
         ForeignKey("task_logs.id"),
         nullable=False,
         comment="任务执行日志表Id",
+    )
+    type: Mapped[ResultType] = mapped_column(
+        Enum(ResultType), nullable=False, comment="结果类型"
     )
     object_name: Mapped[str] = mapped_column(
         String(50),
@@ -165,5 +182,6 @@ class Result(Base):
         "app.models.tasks.TaskLog",
         foreign_keys=[task_log_id],
         primaryjoin="Result.task_log_id==TaskLog.id",
+        back_populates="results",
         uselist=False,
     )

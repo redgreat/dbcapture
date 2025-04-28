@@ -2,7 +2,7 @@ from typing import Dict, Any, List
 import pymysql
 from sqlalchemy.orm import Session
 
-from app.models.tasks import Result, TaskLog, TaskStatus
+from app.models.tasks import Result, TaskLog, TaskStatus, ResultType
 
 
 def _get_connection(
@@ -34,8 +34,28 @@ class BaseComparator:
         target_definition: str | None = None,
         difference_details: Dict[str, Any] | None = None,
         change_sql: str | None = None,
+        type: ResultType = None,
     ) -> Result:
         """创建比较结果对象"""
+        if type is None:
+            # 根据比较器类型自动设置结果类型
+            comparator_name = self.__class__.__name__.lower()
+            if 'table' in comparator_name:
+                type = ResultType.TABLE
+            elif 'view' in comparator_name:
+                type = ResultType.VIEW
+            elif 'procedure' in comparator_name:
+                type = ResultType.PROCEDURE
+            elif 'function' in comparator_name:
+                type = ResultType.FUNCTION
+            elif 'trigger' in comparator_name:
+                type = ResultType.TRIGGER
+            elif 'config' in comparator_name:
+                type = ResultType.CONFIG
+            else:
+                # 默认为表类型
+                type = ResultType.TABLE
+
         return Result(
             task_log_id=task_log_id,
             object_name=object_name,
@@ -44,6 +64,7 @@ class BaseComparator:
             target_definition=target_definition,
             difference_details=difference_details,
             change_sql=change_sql,
+            type=type,
         )
 
     def compare(self, task_log_id: int, report_path: str = None) -> List[Result]:

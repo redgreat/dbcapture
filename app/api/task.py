@@ -22,6 +22,13 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
+@router.get("/tasks/{task_id}/status")
+def get_task_status(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(Task).get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task.status
+
 @router.get("/task_logs")
 def get_task_logs(
     task_id: int = Query(...),

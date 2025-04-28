@@ -30,6 +30,4 @@ mkdir -p log
 
 # 启动应用
 echo "正在启动应用..."
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
 uvicorn app.main:app --reload

@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict
 
-from app.models.tasks import TaskStatus
+from app.models.tasks import TaskStatus, ResultType
 from app.schemas.connection import ConnectionOut
 
 
@@ -38,6 +38,7 @@ class ResultBase(BaseModel):
 class TaskResult(ResultBase):
     id: int
     task_log_id: int
+    type: ResultType
     create_at: datetime
     update_at: datetime
     delete_at: Optional[datetime] = None

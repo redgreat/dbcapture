@@ -7,6 +7,7 @@ from app.models.tasks import (
     Result,
     TaskStatus,
     TaskLog,
+    ResultType,
 )
 from app.core.config import settings
 from app.models.connections import Connection
@@ -199,6 +200,7 @@ class DatabaseComparisonService:
                 change_sql=(
                     _generate_config_change_sql(differences) if differences else None
                 ),
+                type=ResultType.CONFIG,
             )
 
             self.db.add(result)
@@ -238,10 +240,14 @@ class DatabaseComparisonService:
         """比较触发器"""
         return self.trigger_comparator.compare(task_log_id)
 
-    def run_comparison(self, task_log_id: int) -> None:
-        """运行完整的数据库比较"""
-        task_log = self.db.query(TaskLog).get(task_log_id)
-        print(f"====[开始执行比较任务 {task_log_id}]====")
+    def run_comparison(self, task_id: int) -> None:
+        task_log = TaskLog(task_id=task_id, status=TaskStatus.RUNNING)
+        self.db.add(task_log)
+        self.db.commit()
+        self.db.refresh(task_log)
+
+        # return task_log.status
+        print(f"====[开始执行比较任务 {task_log.id}]====")
         task = self.db.query(Task).get(task_log.task_id)
         if not task:
             print(f"错误：找不到比较任务 {task_log.task_id}")
@@ -252,31 +258,31 @@ class DatabaseComparisonService:
         self.db.commit()
         print("已更新任务状态为RUNNING")
 
-        print(f'开始执行数据库配置比较，使用LogId：{task_log_id}')
+        print(f'开始执行数据库配置比较，使用LogId：{task_log.id}')
 
         try:
             print("开始执行数据库配置比较...")
-            self.compare_database_config(task_log_id)
+            self.compare_database_config(task_log.id)
             print("数据库配置比较完成")
 
             print("开始执行表结构比较...")
-            self.compare_table_structure(task_log_id)
+            self.compare_table_structure(task_log.id)
             print("表结构比较完成")
 
             print("开始执行视图比较...")
-            self.compare_views(task_log_id)
+            self.compare_views(task_log.id)
             print("视图比较完成")
 
             print("开始执行存储过程比较...")
-            self.compare_procedures(task_log_id)
+            self.compare_procedures(task_log.id)
             print("存储过程比较完成")
 
             print("开始执行函数比较...")
-            self.compare_functions(task_log_id)
+            self.compare_functions(task_log.id)
             print("函数比较完成")
 
             print("开始执行触发器比较...")
-            self.compare_triggers(task_log_id)
+            self.compare_triggers(task_log.id)
             print("触发器比较完成")
 
             print("开始生成报告...")
