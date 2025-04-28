@@ -13,7 +13,8 @@ router = APIRouter()
 
 @router.get("/tasks", response_model=List[task_schemas.Task])
 def list_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+    # 只查询未删除的任务
+    return db.query(Task).filter(Task.deleted == False).all()
 
 @router.get("/tasks/{task_id}", response_model=task_schemas.Task)
 def get_task(task_id: int, db: Session = Depends(get_db)):
@@ -108,8 +109,13 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    db.delete(task)
+    
+    # 实现软删除，而不是物理删除
+    from datetime import datetime
+    task.deleted = True
+    task.deleted_at = datetime.now()
     db.commit()
+    
     return {"message": "Task deleted"}
 
 

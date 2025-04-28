@@ -151,14 +151,20 @@
                 <h4>{{ item.object_name }}</h4>
                 {% if item.difference_details %}
                 <div class="diff-details">
-                    {% if type == 'table' %}
-                        {% if item.difference_details is string %}
-                            {{ item.difference_details }}
+                    {% if item.difference_details is string %}
+                        {{ item.difference_details }}
+                    {% else %}
+                        {% if type == 'table' and item.difference_details.columns is defined %}
+                            <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
+                        {% elif item.difference_details.message is defined %}
+                            {{ item.difference_details.message }}
+                        {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_source' %}
+                            表 {{ item.object_name }} 在源数据库中不存在
+                        {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_target' %}
+                            表 {{ item.object_name }} 在目标数据库中不存在
                         {% else %}
                             <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
                         {% endif %}
-                    {% else %}
-                        {{ item.difference_details.message }}
                     {% endif %}
                 </div>
                 {% endif %}

@@ -1,6 +1,14 @@
 // 执行任务（数据库结构对比并生成报告）
 async function executeTask(taskId) {
-    if (!confirm('确定要执行该任务并生成对比报告吗？')) return;
+    // 使用美观的确认对话框替代原生 confirm
+    const confirmed = await showConfirmDialog(
+        '确定要执行该任务并生成对比报告吗？', 
+        '执行任务', 
+        '执行', 
+        '取消',
+        'btn-success'
+    );
+    if (!confirmed) return;
     try {
         const statusRes = await fetch(`/api/v1/tasks/${taskId}/status`, {
             headers: getHeaders()

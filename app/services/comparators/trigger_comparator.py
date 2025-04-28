@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import pymysql
 
 from app.models.tasks import Result
@@ -33,6 +33,7 @@ class TriggerComparator(BaseComparator):
         task_log_id: int,
         source_conn: pymysql.Connection,
         target_conn: pymysql.Connection,
+        config: Dict[str, Any] = None,
     ) -> List[Result]:
         """执行触发器比较"""
         # 获取源数据库和目标数据库的所有触发器
@@ -41,8 +42,20 @@ class TriggerComparator(BaseComparator):
 
         results = []
 
+        # 处理忽略触发器配置
+        ignored_triggers = []
+
+        if config and 'ignored_triggers' in config:
+            # 处理具体触发器名忽略
+            if 'exact' in config['ignored_triggers'] and isinstance(config['ignored_triggers']['exact'], list):
+                ignored_triggers = config['ignored_triggers']['exact']
+
         # 比较触发器
         all_trigger_names = set(source_triggers.keys()) | set(target_triggers.keys())
+
+        # 过滤掉需要忽略的触发器
+        all_trigger_names = {trigger_name for trigger_name in all_trigger_names if trigger_name not in ignored_triggers}
+
         for trigger_name in all_trigger_names:
             if trigger_name not in source_triggers:
                 # 触发器在源数据库中不存在

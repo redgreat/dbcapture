@@ -410,6 +410,7 @@ class TableComparator(BaseComparator):
         task_log_id: int,
         source_conn: pymysql.Connection,
         target_conn: pymysql.Connection,
+        config: Dict[str, Any] = None,
     ) -> List[Result]:
         """执行表比较"""
         # 获取源数据库和目标数据库的所有表
@@ -417,9 +418,42 @@ class TableComparator(BaseComparator):
         target_tables = _get_tables(target_conn)
 
         results = []
+        
+        # 处理忽略表配置
+        ignored_tables = []
+        ignored_prefixes = []
+        
+        if config and 'ignored_tables' in config:
+            # 处理具体表名忽略
+            if 'exact' in config['ignored_tables'] and isinstance(config['ignored_tables']['exact'], list):
+                ignored_tables = config['ignored_tables']['exact']
+            
+            # 处理表名前缀忽略
+            if 'prefixes' in config['ignored_tables'] and isinstance(config['ignored_tables']['prefixes'], list):
+                ignored_prefixes = config['ignored_tables']['prefixes']
 
         # 比较表是否存在
         all_tables = set(source_tables.keys()) | set(target_tables.keys())
+        
+        # 过滤掉需要忽略的表
+        filtered_tables = set()
+        for table_name in all_tables:
+            # 检查是否在忽略表列表中
+            if table_name in ignored_tables:
+                continue
+                
+            # 检查是否匹配忽略前缀
+            should_ignore = False
+            for prefix in ignored_prefixes:
+                if table_name.startswith(prefix):
+                    should_ignore = True
+                    break
+                    
+            if not should_ignore:
+                filtered_tables.add(table_name)
+        
+        # 使用过滤后的表集合
+        all_tables = filtered_tables
 
         for table_name in all_tables:
             source_exists = table_name in source_tables

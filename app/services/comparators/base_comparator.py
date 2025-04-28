@@ -97,7 +97,8 @@ class BaseComparator:
         )
 
         try:
-            results = self._do_compare(task_log_id, source_conn, target_conn)
+            # 传递任务配置到_do_compare方法
+            results = self._do_compare(task_log_id, source_conn, target_conn, task.config)
 
             # 保存所有结果
             for result in results:

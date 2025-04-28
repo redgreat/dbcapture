@@ -60,7 +60,7 @@ async function loadDbConnections() {
 }
 
 // 加载任务列表
-async function fetchTasks() {
+async function fetchTasks(showToast = false) {
     if (!checkAuth()) return;
     try {
         const res = await fetch('/api/v1/tasks', {
@@ -111,43 +111,94 @@ async function fetchTasks() {
                 </tr>`;
             });
         }
+        
+        // 如果需要显示成功提示
+        if (showToast) {
+            showWarningToast('刷新成功', 'success');
+        }
     } catch (err) {
         showWarningToast('请求异常：' + err, 'error');
     }
 }
 
-// 任务日志弹窗逻辑
+// 显示任务日志弹窗
 async function showTaskLogs(taskId, page = 1, pageSize = 10) {
-    const modal = new bootstrap.Modal(document.getElementById('logModal'));
-    document.getElementById('logTable').innerHTML = '';
-    modal.show();
+    if (!checkAuth()) return;
     try {
-        const res = await fetch(`/api/v1/task_logs?task_id=${taskId}&page=${page}&page_size=${pageSize}`);
-        const result = await res.json();
-        const items = result.items || [];
-        const total = result.total || 0;
-        if (!Array.isArray(items) || items.length === 0) {
-            document.getElementById('logTable').innerHTML += '<tr><td colspan="4" class="text-center">暂无日志</td></tr>';
+        // 修改API路径，使用task_logs而非logs
+        const res = await fetch(`/api/v1/task_logs?task_id=${taskId}&page=${page}&page_size=${pageSize}`, {
+            headers: getHeaders()
+        });
+        if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+        const data = await res.json();
+        // 修正tbody的ID引用，与HTML中的ID保持一致
+        const tbody = document.getElementById('logTable');
+        const modalTitle = document.getElementById('logModalLabel');
+        if (modalTitle) {
+            modalTitle.textContent = `任务 #${taskId} 日志`;
+        }
+        
+        if (!data.items || data.items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无日志</td></tr>';
         } else {
-            items.forEach(log => {
-                const err = log.error_message ? log.error_message.replace(/'/g, '&apos;').replace(/"/g, '&quot;') : '';
-                const reportBtn = (log.status === 'completed' && log.result_url) ? `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>` : '';
-                document.getElementById('logTable').innerHTML += `<tr>
-                    <td>${log.created_at ? log.created_at.replace('T', ' ').slice(0, 19) : ''}</td>
-                    <td>${log.status}</td>
-                    <td title="${err}">${err.length > 20 ? err.slice(0, 20) + '...' : err}</td>
+            tbody.innerHTML = '';
+            data.items.forEach(log => {
+                const statusClass = log.status === 'success' ? 'text-success' : 
+                                   log.status === 'failed' ? 'text-danger' : 
+                                   log.status === 'running' ? 'text-primary' : '';
+                // 添加查看报告按钮（如果有报告URL）
+                let reportBtn = '';
+                // 调试输出日志状态和报告URL
+                console.log('Log status:', log.status, 'Result URL:', log.result_url);
+                
+                // 修改条件，不仅检查success状态，还检查completed状态
+                if ((log.status === 'success' || log.status === 'completed') && log.result_url) {
+                    reportBtn = `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>`;
+                }
+                
+                // 处理错误信息，使其可点击查看完整内容
+                const errorMsg = log.error_message || '';
+                const errorDisplay = errorMsg ? 
+                    `<span class="error-message" title="点击查看完整错误信息" 
+                           onclick="showErrorModal('${encodeURIComponent(errorMsg)}')"
+                    >${errorMsg}</span>` : '';
+                
+                tbody.innerHTML += `<tr>
+                    <td class="time-cell">${log.created_at}</td>
+                    <td class="${statusClass}">${log.status}</td>
+                    <td>${errorDisplay}</td>
                     <td>${reportBtn}</td>
                 </tr>`;
             });
         }
-        renderLogPagination(taskId, page, pageSize, total);
-    } catch (e) {
-        document.getElementById('logTable').innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载失败</td></tr>';
-        document.getElementById('logPagination').innerHTML = '';
+        
+        // 渲染分页
+        renderLogPagination(taskId, page, pageSize, data.total);
+        
+        // 显示模态框
+        const logModal = document.getElementById('logModal');
+        if (logModal) {
+            // 先获取已存在的Modal实例，如果没有才创建新的
+            let modal = bootstrap.Modal.getInstance(logModal);
+            if (!modal) {
+                modal = new bootstrap.Modal(logModal);
+                
+                // 添加事件监听器，在模态框隐藏时清理内容和事件
+                logModal.addEventListener('hidden.bs.modal', function () {
+                    document.getElementById('logTable').innerHTML = '';
+                    document.getElementById('logPagination').innerHTML = '';
+                });
+            }
+            modal.show();
+        }
+    } catch (err) {
+        showWarningToast('请求异常：' + err, 'error');
     }
 }
 
-window.showTaskLogs = showTaskLogs;
 const pageSize = 10;
 function renderLogPagination(taskId, page, pageSize, total) {
     const totalPages = Math.ceil(total / pageSize);
@@ -173,91 +224,43 @@ function renderLogPagination(taskId, page, pageSize, total) {
     document.getElementById('logPagination').innerHTML = html;
 }
 
-
-// 任务编辑弹窗逻辑
-function showEditTaskModal(id, name, description, sourceConnName, targetConnName, sourceConnId, targetConnId, config) {
-    const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
-    const form = document.getElementById('editForm');
-    form.dataset.id = id;
-    form.name.value = decodeURIComponent(name || '');
-    form.description.value = decodeURIComponent(description || '');
-    // 修复：优先用 sourceConnName/targetConnName，否则尝试解析 JSON 对象
-    let src = '';
-    let tgt = '';
-    try {
-        src = sourceConnName ? decodeURIComponent(sourceConnName) : '';
-        tgt = targetConnName ? decodeURIComponent(targetConnName) : '';
-    } catch {}
-    form.source_conn_name.value = src;
-    form.target_conn_name.value = tgt;
-    // 缓存ID
-    form.dataset.sourceConnId = sourceConnId || '';
-    form.dataset.targetConnId = targetConnId || '';
-    // 配置赋值
-    let configStr = '';
-    if (config && config !== 'null') {
-        if (typeof config === 'object') {
-            configStr = JSON.stringify(config, null, 2);
-        } else {
-            try {
-                configStr = decodeURIComponent(config);
-            } catch {
-                configStr = config;
-            }
-        }
-    }
-    form.config.value = configStr;
+// 显示错误信息弹窗
+function showErrorModal(errorEncoded) {
+    const errorMsg = decodeURIComponent(errorEncoded);
+    document.getElementById('errorModalBody').textContent = errorMsg || '无错误信息';
+    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
     modal.show();
 }
 
-// 编辑任务表单提交
-if (document.getElementById('editForm')) {
-    document.getElementById('editForm').onsubmit = async function(e) {
-        e.preventDefault();
-        const id = this.dataset.id;
-        let config = this.config.value.trim();
-        let configObj = null;
-        if (config) {
-            try {
-                configObj = JSON.parse(config);
-            } catch (e) {
-                showWarningToast('任务配置必须是合法的JSON格式！', 'error');
-                return;
-            }
-        }
-        const payload = {
-            name: this.name.value.trim(),
-            description: this.description.value.trim(),
-            source_conn_id: this.dataset.sourceConnId,
-            target_conn_id: this.dataset.targetConnId,
-            config: configObj
-        };
-        try {
-            const res = await fetch(`/api/v1/tasks/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (res.status === 400) {
-                const data = await res.json();
-                showWarningToast(data.detail || '任务名称已存在', 'error');
-                return;
-            }
-            if (!res.ok) throw new Error('修改失败');
-            bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
-            fetchTasks();
-            showWarningToast('任务修改成功', 'success');
-        } catch (e) {
-            showWarningToast('修改失败：' + (e.message || e), 'error');
-        }
-    }
+// 显示任务描述弹窗
+function showDescModal(descEncoded) {
+    const desc = decodeURIComponent(descEncoded);
+    document.getElementById('descModalBody').textContent = desc || '无描述';
+    const modal = new bootstrap.Modal(document.getElementById('descModal'));
+    modal.show();
 }
 
-// 任务描述弹窗逻辑
-function showDescModal(desc) {
-    const modalBody = document.getElementById('descModalBody');
-    modalBody.textContent = decodeURIComponent(desc);
-    const modal = new bootstrap.Modal(document.getElementById('descModal'));
+// 显示编辑任务弹窗
+function showEditTaskModal(id, nameEncoded, descEncoded, sourceConnNameEncoded, targetConnNameEncoded, sourceConnId, targetConnId, configEncoded) {
+    const name = decodeURIComponent(nameEncoded);
+    const desc = decodeURIComponent(descEncoded);
+    const sourceConnName = decodeURIComponent(sourceConnNameEncoded);
+    const targetConnName = decodeURIComponent(targetConnNameEncoded);
+    const config = configEncoded ? decodeURIComponent(configEncoded) : '';
+    
+    const form = document.getElementById('editForm');
+    form.dataset.id = id;
+    // 将数据库连接ID保存到表单的数据属性中，以便在提交时使用
+    form.dataset.sourceConnId = sourceConnId;
+    form.dataset.targetConnId = targetConnId;
+    
+    form.name.value = name;
+    form.description.value = desc;
+    form.source_conn_name.value = sourceConnName;
+    form.target_conn_name.value = targetConnName;
+    form.config.value = config;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
     modal.show();
 }
 
@@ -267,16 +270,8 @@ if (document.getElementById('createForm')) {
         e.preventDefault();
         if (!checkAuth()) return;
         const form = e.target;
-        let config = form.config.value.trim();
-        let configObj = null;
-        if (config) {
-            try {
-                configObj = JSON.parse(config);
-            } catch (e) {
-                showWarningToast('任务配置必须是合法的JSON格式！', 'error');
-                return;
-            }
-        }
+        // 使用忽略配置模块收集配置
+        const configObj = collectIgnoreConfig();
         const payload = {
             name: form.name.value,
             description: form.description.value,
@@ -322,19 +317,73 @@ if (document.getElementById('createForm')) {
     };
 }
 
+// 编辑任务表单提交
+if (document.getElementById('editForm')) {
+    document.getElementById('editForm').onsubmit = async function(e) {
+        e.preventDefault();
+        if (!checkAuth()) return;
+        const form = e.target;
+        const taskId = form.dataset.id;
+        if (!taskId) {
+            showWarningToast('任务ID不存在', 'error');
+            return;
+        }
+        let config = form.config.value.trim();
+        let configObj = null;
+        if (config) {
+            try {
+                configObj = JSON.parse(config);
+            } catch (e) {
+                showWarningToast('任务配置必须是合法的JSON格式！', 'error');
+                return;
+            }
+        }
+        const payload = {
+            name: form.name.value,
+            description: form.description.value,
+            source_conn_id: parseInt(form.dataset.sourceConnId),
+            target_conn_id: parseInt(form.dataset.targetConnId),
+            config: configObj
+        };
+
+        try {
+            const res = await fetch(`/api/v1/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            let data;
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                data = await res.text();
+            }
+            if (res.ok) {
+                showWarningToast('任务更新成功！', 'success');
+                // 关闭模态框
+                let modalEl = document.getElementById('editTaskModal');
+                if (modalEl) {
+                    let modal = bootstrap.Modal.getInstance(modalEl);
+                    if (!modal) modal = new bootstrap.Modal(modalEl);
+                    modal.hide();
+                }
+                fetchTasks();
+            } else {
+                showWarningToast('更新失败：' + (typeof data === 'string' ? data : JSON.stringify(data)), 'error');
+            }
+        } catch (err) {
+            showWarningToast('请求异常：' + err, 'error');
+        }
+    };
+}
+
 // 创建连接表单提交
 if (document.getElementById('createConnectionForm')) {
-    // 每次打开模态框时重置表单
-    const modalEl = document.getElementById('createConnectionModal');
-    if (modalEl) {
-        modalEl.addEventListener('show.bs.modal', function () {
-            const form = document.getElementById('createConnectionForm');
-            if (form) {
-                form.reset();
-                form.port.value = 3306;
-            }
-        });
-    }
     document.getElementById('createConnectionForm').onsubmit = async function(e) {
         e.preventDefault();
         if (!checkAuth()) return;
@@ -393,7 +442,15 @@ if (document.getElementById('createConnectionForm')) {
 
 // 删除任务
 async function deleteTask(taskId) {
-    if (!confirm('确定要删除该任务吗？')) return;
+    // 使用美观的确认对话框替代原生 confirm
+    const confirmed = await showConfirmDialog(
+        '确定要删除该任务吗？此操作不可恢复。', 
+        '删除任务', 
+        '删除', 
+        '取消',
+        'btn-danger'
+    );
+    if (!confirmed) return;
     try {
         const res = await fetch(`/api/v1/tasks/${taskId}`, {
             method: 'DELETE',
@@ -412,7 +469,15 @@ async function deleteTask(taskId) {
 
 // 删除连接
 async function deleteConnection(connId) {
-    if (!confirm('确定要删除该连接吗？')) return;
+    // 使用美观的确认对话框替代原生 confirm
+    const confirmed = await showConfirmDialog(
+        '确定要删除该连接吗？此操作不可恢复。', 
+        '删除连接', 
+        '删除', 
+        '取消',
+        'btn-danger'
+    );
+    if (!confirmed) return;
     try {
         const res = await fetch(`/api/v1/connections/${connId}`, {
             method: 'DELETE',
@@ -434,4 +499,16 @@ if (checkAuth()) {
     loadDbConnections();
 }
 
-
+// 初始化刷新按钮
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取刷新按钮元素
+    const refreshBtn = document.getElementById('refreshTasksBtn');
+    
+    // 如果按钮存在，添加点击事件处理
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            // 调用fetchTasks函数刷新任务列表，并显示成功提示
+            fetchTasks(true);
+        });
+    }
+});

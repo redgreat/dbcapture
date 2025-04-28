@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import pymysql
 
 from app.models.tasks import Result
@@ -33,6 +33,7 @@ class ViewComparator(BaseComparator):
         task_log_id: int,
         source_conn: pymysql.Connection,
         target_conn: pymysql.Connection,
+        config: Dict[str, Any] = None,
     ) -> List[Result]:
         """执行视图比较"""
         # 获取源数据库和目标数据库中的所有视图
@@ -41,8 +42,19 @@ class ViewComparator(BaseComparator):
 
         results = []
 
+        # 处理忽略视图配置
+        ignored_views = []
+
+        if config and 'ignored_views' in config:
+            # 处理具体视图名忽略
+            if 'exact' in config['ignored_views'] and isinstance(config['ignored_views']['exact'], list):
+                ignored_views = config['ignored_views']['exact']
+
         # 比较视图
         all_view_names = set(source_views.keys()) | set(target_views.keys())
+
+        # 过滤掉需要忽略的视图
+        all_view_names = {view_name for view_name in all_view_names if view_name not in ignored_views}
         for view_name in all_view_names:
             if view_name not in source_views:
                 # 视图在源数据库中不存在

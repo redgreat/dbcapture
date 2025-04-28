@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import pymysql
 
 from app.models.tasks import Result
@@ -34,6 +34,7 @@ class FunctionComparator(BaseComparator):
         task_log_id: int,
         source_conn: pymysql.Connection,
         target_conn: pymysql.Connection,
+        config: Dict[str, Any] = None,
     ) -> List[Result]:
         """执行函数比较"""
         # 获取源数据库和目标数据库的所有函数
@@ -41,9 +42,20 @@ class FunctionComparator(BaseComparator):
         target_functions = _get_functions(target_conn)
 
         results = []
+        
+        # 处理忽略函数配置
+        ignored_functions = []
+        
+        if config and 'ignored_functions' in config:
+            # 处理具体函数名忽略
+            if 'exact' in config['ignored_functions'] and isinstance(config['ignored_functions']['exact'], list):
+                ignored_functions = config['ignored_functions']['exact']
 
         # 比较函数
         all_function_names = set(source_functions.keys()) | set(target_functions.keys())
+        
+        # 过滤掉需要忽略的函数
+        all_function_names = {function_name for function_name in all_function_names if function_name not in ignored_functions}
         for function_name in all_function_names:
             if function_name not in source_functions:
                 # 函数在源数据库中不存在

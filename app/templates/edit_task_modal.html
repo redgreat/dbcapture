@@ -24,6 +24,87 @@
             <label class="form-label">目标数据库</label>
             <input type="text" class="form-control" name="target_conn_name" disabled>
           </div>
+          
+          <div class="mb-3">
+            <label class="form-label">对比忽略配置</label>
+            <div class="card mb-3">
+              <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="editIgnoreTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="edit-table-tab" data-bs-toggle="tab" data-bs-target="#edit-table-content" type="button" role="tab" aria-controls="edit-table-content" aria-selected="true">表</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="edit-view-tab" data-bs-toggle="tab" data-bs-target="#edit-view-content" type="button" role="tab" aria-controls="edit-view-content" aria-selected="false">视图</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="edit-procedure-tab" data-bs-toggle="tab" data-bs-target="#edit-procedure-content" type="button" role="tab" aria-controls="edit-procedure-content" aria-selected="false">存储过程</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="edit-function-tab" data-bs-toggle="tab" data-bs-target="#edit-function-content" type="button" role="tab" aria-controls="edit-function-content" aria-selected="false">函数</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="edit-trigger-tab" data-bs-toggle="tab" data-bs-target="#edit-trigger-content" type="button" role="tab" aria-controls="edit-trigger-content" aria-selected="false">触发器</button>
+                  </li>
+                </ul>
+              </div>
+              <div class="card-body">
+                <div class="tab-content" id="editIgnoreTabsContent">
+                  <!-- 表忽略配置 -->
+                  <div class="tab-pane fade show active" id="edit-table-content" role="tabpanel" aria-labelledby="edit-table-tab">
+                    <div class="mb-3">
+                      <label class="form-label">忽略具体表名（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredTables" rows="2" placeholder="user_logs
+temp_data" data-type="table" data-mode="exact"></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">忽略表名前缀（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredTablePrefixes" rows="2" placeholder="tmp_
+temp_
+log_" data-type="table" data-mode="prefix"></textarea>
+                    </div>
+                  </div>
+                  
+                  <!-- 视图忽略配置 -->
+                  <div class="tab-pane fade" id="edit-view-content" role="tabpanel" aria-labelledby="edit-view-tab">
+                    <div class="mb-3">
+                      <label class="form-label">忽略具体视图名（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredViews" rows="2" placeholder="report_view
+summary_view" data-type="view" data-mode="exact"></textarea>
+                    </div>
+                  </div>
+                  
+                  <!-- 存储过程忽略配置 -->
+                  <div class="tab-pane fade" id="edit-procedure-content" role="tabpanel" aria-labelledby="edit-procedure-tab">
+                    <div class="mb-3">
+                      <label class="form-label">忽略具体存储过程名（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredProcedures" rows="2" placeholder="generate_report
+process_data" data-type="procedure" data-mode="exact"></textarea>
+                    </div>
+                  </div>
+                  
+                  <!-- 函数忽略配置 -->
+                  <div class="tab-pane fade" id="edit-function-content" role="tabpanel" aria-labelledby="edit-function-tab">
+                    <div class="mb-3">
+                      <label class="form-label">忽略具体函数名（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredFunctions" rows="2" placeholder="calculate_total
+format_date" data-type="function" data-mode="exact"></textarea>
+                    </div>
+                  </div>
+                  
+                  <!-- 触发器忽略配置 -->
+                  <div class="tab-pane fade" id="edit-trigger-content" role="tabpanel" aria-labelledby="edit-trigger-tab">
+                    <div class="mb-3">
+                      <label class="form-label">忽略具体触发器名（每行一个）</label>
+                      <textarea class="form-control ignore-config" id="editIgnoredTriggers" rows="2" placeholder="before_insert_log
+after_update_audit" data-type="trigger" data-mode="exact"></textarea>
+                    </div>
+                  </div>
+                </div>
+                <small class="text-muted">这些对象将在比较时被忽略</small>
+              </div>
+            </div>
+            <input type="hidden" name="config" id="editConfigJson">
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>

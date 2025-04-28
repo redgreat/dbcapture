@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 import pymysql
 
 from app.models.tasks import Result
@@ -34,6 +34,7 @@ class ProcedureComparator(BaseComparator):
         task_log_id: int,
         source_conn: pymysql.Connection,
         target_conn: pymysql.Connection,
+        config: Dict[str, Any] = None,
     ) -> List[Result]:
         """执行存储过程比较"""
         # 获取源数据库和目标数据库的所有存储过程
@@ -42,10 +43,22 @@ class ProcedureComparator(BaseComparator):
 
         results = []
 
+        # 处理忽略存储过程配置
+        ignored_procedures = []
+
+        if config and 'ignored_procedures' in config:
+            # 处理具体存储过程名忽略
+            if 'exact' in config['ignored_procedures'] and isinstance(config['ignored_procedures']['exact'], list):
+                ignored_procedures = config['ignored_procedures']['exact']
+
         # 比较存储过程
         all_procedure_names = set(source_procedures.keys()) | set(
             target_procedures.keys()
         )
+
+        # 过滤掉需要忽略的存储过程
+        all_procedure_names = {procedure_name for procedure_name in all_procedure_names if procedure_name not in ignored_procedures}
+
         for procedure_name in all_procedure_names:
             if procedure_name not in source_procedures:
                 # 存储过程在源数据库中不存在
