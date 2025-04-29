@@ -142,7 +142,7 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
         }
         
         if (!data.items || data.items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无日志</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">暂无日志</td></tr>';
         } else {
             tbody.innerHTML = '';
             data.items.forEach(log => {
@@ -156,7 +156,9 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
                 
                 // 修改条件，不仅检查success状态，还检查completed状态
                 if ((log.status === 'success' || log.status === 'completed') && log.result_url) {
-                    reportBtn = `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm">查看报告</a>`;
+                    // 添加onclick事件，点击后关闭弹窗
+                    reportBtn = `<a href="${log.result_url}" target="_blank" class="btn btn-link btn-sm report-btn" 
+                                   onclick="closeLogModal()">查看报告</a>`;
                 }
                 
                 // 处理错误信息，使其可点击查看完整内容
@@ -166,9 +168,13 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
                            onclick="showErrorModal('${encodeURIComponent(errorMsg)}')"
                     >${errorMsg}</span>` : '';
                 
+                // 格式化耗时显示，如果没有耗时则显示'-'
+                const costTimeDisplay = log.cost_time !== null ? log.cost_time : '-';
+                
                 tbody.innerHTML += `<tr>
                     <td class="time-cell">${log.created_at}</td>
                     <td class="${statusClass}">${log.status}</td>
+                    <td>${costTimeDisplay}</td>
                     <td>${errorDisplay}</td>
                     <td>${reportBtn}</td>
                 </tr>`;
@@ -222,6 +228,20 @@ function renderLogPagination(taskId, page, pageSize, total) {
     // 下一页
     html += `<li class="page-item${page === totalPages ? ' disabled' : ''}"><a class="page-link" href="#" onclick="showTaskLogs(${taskId}, ${page+1}, ${pageSize});return false;">下一页</a></li>`;
     document.getElementById('logPagination').innerHTML = html;
+}
+
+// 关闭任务日志弹窗
+function closeLogModal() {
+    const logModal = document.getElementById('logModal');
+    if (logModal) {
+        const modal = bootstrap.Modal.getInstance(logModal);
+        if (modal) {
+            // 使用setTimeout确保点击事件先处理完成，然后再关闭模态框
+            setTimeout(() => {
+                modal.hide();
+            }, 100);
+        }
+    }
 }
 
 // 显示错误信息弹窗

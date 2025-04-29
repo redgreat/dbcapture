@@ -33,6 +33,7 @@ class ResultBase(BaseModel):
     difference_details: Optional[Dict[str, Any]] = None
     change_sql: Optional[str] = None
     file_path: Optional[str] = None
+    cost_time: Optional[float] = None
 
 
 class TaskResult(ResultBase):

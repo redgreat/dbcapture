@@ -7,6 +7,7 @@ from sqlalchemy import (
     Enum,
     Integer,
     BigInteger,
+    Float,
 )
 from sqlalchemy.dialects.mysql import BIGINT as MYSQL_BIGINT
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -120,6 +121,9 @@ class TaskLog(Base):
     )
     result_url: Mapped[str | None] = mapped_column(
         String(200), nullable=True, comment="报告文件路径"
+    )
+    cost_time: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="执行耗时（秒）"
     )
 
     # 关系定义

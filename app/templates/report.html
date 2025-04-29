@@ -5,92 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数据库对比报告</title>
     <link rel="icon" href="/static/resource/zr_avatar.png">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-        .summary {
-            background-color: #fff;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-size: 1.5em;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        .diff-item {
-            background-color: #fff;
-            padding: 15px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .diff-item h4 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
-        }
-        .diff-details {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 3px;
-            font-family: monospace;
-            white-space: pre-wrap;
-        }
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-weight: bold;
-        }
-        .status-completed { background-color: #d4edda; color: #155724; }
-        .status-failed { background-color: #f8d7da; color: #721c24; }
-        .status-running { background-color: #cce5ff; color: #004085; }
-        .status-pending { background-color: #fff3cd; color: #856404; }
-        .sql-code {
-            background-color: #272822;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        th {
-            background-color: #f8f9fa;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/report.css">
 </head>
 <body>
+    <!-- 返回顶部按钮 -->
+    <div class="back-to-top" id="backToTop" title="返回顶部">↑</div>
+    
     <div class="container">
         <div class="header">
             <h1>数据库对比报告</h1>
@@ -116,34 +36,70 @@
                 </tr>
                 <tr>
                     <th>配置差异</th>
-                    <td>{{ summary.differences_by_type.config }}</td>
+                    <td>
+                        {% if summary.differences_by_type.config > 0 %}
+                            <a href="#section-config">{{ summary.differences_by_type.config }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.config }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>表结构差异</th>
-                    <td>{{ summary.differences_by_type.table }}</td>
+                    <td>
+                        {% if summary.differences_by_type.table > 0 %}
+                            <a href="#section-table">{{ summary.differences_by_type.table }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.table }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>视图差异</th>
-                    <td>{{ summary.differences_by_type.view }}</td>
+                    <td>
+                        {% if summary.differences_by_type.view > 0 %}
+                            <a href="#section-view">{{ summary.differences_by_type.view }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.view }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>存储过程差异</th>
-                    <td>{{ summary.differences_by_type.procedure }}</td>
+                    <td>
+                        {% if summary.differences_by_type.procedure > 0 %}
+                            <a href="#section-procedure">{{ summary.differences_by_type.procedure }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.procedure }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>函数差异</th>
-                    <td>{{ summary.differences_by_type.function }}</td>
+                    <td>
+                        {% if summary.differences_by_type.function > 0 %}
+                            <a href="#section-function">{{ summary.differences_by_type.function }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.function }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>触发器差异</th>
-                    <td>{{ summary.differences_by_type.trigger }}</td>
+                    <td>
+                        {% if summary.differences_by_type.trigger > 0 %}
+                            <a href="#section-trigger">{{ summary.differences_by_type.trigger }}</a>
+                        {% else %}
+                            {{ summary.differences_by_type.trigger }}
+                        {% endif %}
+                    </td>
                 </tr>
             </table>
         </div>
 
         {% for type, items in results.items() %}
         {% if items %}
-        <div class="section">
+        <div class="section" id="section-{{ type }}">
             <h2 class="section-title">{{ type|title }} 差异</h2>
             {% for item in items %}
             {% if item.has_differences %}
@@ -154,16 +110,22 @@
                     {% if item.difference_details is string %}
                         {{ item.difference_details }}
                     {% else %}
-                        {% if type == 'table' and item.difference_details.columns is defined %}
-                            <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
+                        {% if type == 'table' %}
+                            {% if item.difference_details.columns is defined or item.difference_details.indexes is defined or item.difference_details.constraints is defined %}
+                                {% if item.difference_details.columns is defined and item.difference_details.columns %}<h5>列差异:</h5><pre class="json-content" data-json='{{ item.difference_details.columns|tojson|safe }}'></pre>{% endif %}
+                                {% if item.difference_details.indexes is defined and item.difference_details.indexes %}<h5>索引差异:</h5><pre class="json-content" data-json='{{ item.difference_details.indexes|tojson|safe }}'></pre>{% endif %}
+                                {% if item.difference_details.constraints is defined and item.difference_details.constraints %}<h5>约束差异:</h5><pre class="json-content" data-json='{{ item.difference_details.constraints|tojson|safe }}'></pre>{% endif %}
+                            {% else %}
+                                <pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>
+                            {% endif %}
                         {% elif item.difference_details.message is defined %}
                             {{ item.difference_details.message }}
                         {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_source' %}
-                            表 {{ item.object_name }} 在源数据库中不存在
+                            <div class="text-left">表 {{ item.object_name }} 在源数据库中不存在</div>
                         {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_target' %}
-                            表 {{ item.object_name }} 在目标数据库中不存在
+                            <div class="text-left">表 {{ item.object_name }} 在目标数据库中不存在</div>
                         {% else %}
-                            <pre>{{ item.difference_details|tojson(indent=2) }}</pre>
+                            <pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -181,5 +143,7 @@
         {% endif %}
         {% endfor %}
     </div>
+    <!-- 引入报告页面的JavaScript文件 -->
+    <script src="/static/js/report.js"></script>
 </body>
 </html> 

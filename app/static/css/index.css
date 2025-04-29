@@ -1,0 +1,58 @@
+/* 数据库结构对比任务管理样式 */
+body { 
+    padding: 2rem; 
+}
+.task-row { 
+    transition: background 0.2s; 
+}
+.task-row:hover { 
+    background: #f8f9fa; 
+}
+.nav-tabs { 
+    margin-bottom: 1rem; 
+}
+.user-info {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+/* 日志模态框样式 */
+.time-col { 
+    width: 150px; 
+}
+.status-col { 
+    width: 100px; 
+}
+.cost-col { 
+    width: 100px; 
+}
+.error-col { 
+    width: 250px; 
+}
+.action-col { 
+    width: 120px; 
+}
+.error-message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 230px;
+    cursor: pointer;
+    display: inline-block;
+}
+/* 防止执行时间列换行 */
+.time-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* 列标题居中 */
+#logModal th {
+    text-align: center;
+}
+
+/* 确保查看报告按钮文字不换行 */
+.report-btn {
+    white-space: nowrap;
+}

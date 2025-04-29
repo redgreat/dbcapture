@@ -51,7 +51,8 @@ def get_task_logs(
             'status': log.status.value if hasattr(log.status, 'value') else str(log.status),
             'error_message': log.error_message,
             'created_at': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if hasattr(log, 'created_at') and log.created_at else '',
-            'result_url': log.result_url
+            'result_url': log.result_url,
+            'cost_time': log.cost_time  # 添加执行耗时字段
         }
         for log in logs
     ]

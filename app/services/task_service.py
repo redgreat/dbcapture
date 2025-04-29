@@ -241,6 +241,10 @@ class DatabaseComparisonService:
         return self.trigger_comparator.compare(task_log_id)
 
     def run_comparison(self, task_id: int) -> None:
+        # 创建任务日志并记录开始时间
+        import time
+        start_time = time.time()
+        
         task_log = TaskLog(task_id=task_id, status=TaskStatus.RUNNING)
         self.db.add(task_log)
         self.db.commit()
@@ -296,11 +300,17 @@ class DatabaseComparisonService:
 
             task.status = TaskStatus.COMPLETED
             print("所有比较完成，更新状态为COMPLETED")
+            task_log.status = TaskStatus.COMPLETED
         except Exception as e:
             print(f"比较过程中发生错误：{str(e)}")
             task.status = TaskStatus.FAILED
-            task.error_message = str(e)
+            task_log.status = TaskStatus.FAILED
+            task_log.error_message = str(e)
             print(f"更新任务状态为FAILED，错误信息：{str(e)}")
         finally:
+            # 计算执行耗时并更新到日志
+            end_time = time.time()
+            task_log.cost_time = round(end_time - start_time, 2)  # 保留两位小数
+            print(f"任务执行耗时：{task_log.cost_time} 秒")
             self.db.commit()
             print("====[比较任务执行结束]====\n")
