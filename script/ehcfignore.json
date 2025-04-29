@@ -291,7 +291,8 @@
         "tmp_nqtjprice",
         "tb_workorderhangelog",
         "tb_usersploginlog",
-        "tmp_usertype"
+        "tmp_usertype",
+        "manager_userinfo"
       ]
     },
     "ignored_procedures": {
