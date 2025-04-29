@@ -137,6 +137,16 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
         // 修正tbody的ID引用，与HTML中的ID保持一致
         const tbody = document.getElementById('logTable');
         const modalTitle = document.getElementById('logModalLabel');
+        // 事件委托：点击错误信息弹窗展示（只绑定一次）
+        if (!tbody._errorEventBound) {
+            tbody.addEventListener('click', function(e) {
+                if (e.target.classList.contains('error-message')) {
+                    const msg = decodeURIComponent(e.target.getAttribute('data-error'));
+                    showErrorModal(msg);
+                }
+            });
+            tbody._errorEventBound = true;
+        }
         if (modalTitle) {
             modalTitle.textContent = `任务 #${taskId} 日志`;
         }
@@ -163,16 +173,15 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
                 
                 // 处理错误信息，使其可点击查看完整内容
                 const errorMsg = log.error_message || '';
-                // 展示内容做HTML转义，弹窗参数用encodeURIComponent
                 function escapeHtml(str) {
                     return str.replace(/[&<>"'`]/g, function (c) {
                         return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c]);
                     });
                 }
                 const errorDisplay = errorMsg ? 
-                    `<span class="error-message" title="点击查看完整错误信息" 
-                        onclick="showErrorModal('${encodeURIComponent(errorMsg)}')"
-                    >${escapeHtml(errorMsg)}</span>` : '';
+                    `<span class="error-message" title="点击查看完整错误信息" data-error="${encodeURIComponent(errorMsg)}">
+                        ${escapeHtml(errorMsg)}
+                    </span>` : '';
                 
                 // 格式化耗时显示，如果没有耗时则显示'-'
                 const costTimeDisplay = log.cost_time !== null ? log.cost_time : '-';
@@ -250,12 +259,14 @@ function closeLogModal() {
     }
 }
 
-// 显示错误信息弹窗
-function showErrorModal(errorEncoded) {
-    const errorMsg = decodeURIComponent(errorEncoded);
+// 显示错误信息弹窗（全局只创建一次Modal实例）
+let errorModalInstance = null;
+function showErrorModal(errorMsg) {
     document.getElementById('errorModalBody').textContent = errorMsg || '无错误信息';
-    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
-    modal.show();
+    if (!errorModalInstance) {
+        errorModalInstance = new bootstrap.Modal(document.getElementById('errorModal'));
+    }
+    errorModalInstance.show();
 }
 
 // 显示任务描述弹窗
