@@ -25,4 +25,4 @@ RUN mkdir -p reports
 EXPOSE 8000
 
 # 启动命令
-CMD ["uvicorn", "app.main:app"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0"]
