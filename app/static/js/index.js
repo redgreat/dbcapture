@@ -152,7 +152,7 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
                 // 添加查看报告按钮（如果有报告URL）
                 let reportBtn = '';
                 // 调试输出日志状态和报告URL
-                console.log('Log status:', log.status, 'Result URL:', log.result_url);
+                // console.log('Log status:', log.status, 'Result URL:', log.result_url);
                 
                 // 修改条件，不仅检查success状态，还检查completed状态
                 if ((log.status === 'success' || log.status === 'completed') && log.result_url) {
@@ -163,10 +163,16 @@ async function showTaskLogs(taskId, page = 1, pageSize = 10) {
                 
                 // 处理错误信息，使其可点击查看完整内容
                 const errorMsg = log.error_message || '';
+                // 展示内容做HTML转义，弹窗参数用encodeURIComponent
+                function escapeHtml(str) {
+                    return str.replace(/[&<>"'`]/g, function (c) {
+                        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[c]);
+                    });
+                }
                 const errorDisplay = errorMsg ? 
                     `<span class="error-message" title="点击查看完整错误信息" 
-                           onclick="showErrorModal('${encodeURIComponent(errorMsg)}')"
-                    >${errorMsg}</span>` : '';
+                        onclick="showErrorModal('${encodeURIComponent(errorMsg)}')"
+                    >${escapeHtml(errorMsg)}</span>` : '';
                 
                 // 格式化耗时显示，如果没有耗时则显示'-'
                 const costTimeDisplay = log.cost_time !== null ? log.cost_time : '-';
