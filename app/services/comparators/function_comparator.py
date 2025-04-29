@@ -89,7 +89,20 @@ class FunctionComparator(BaseComparator):
                 results.append(result)
             else:
                 # 比较函数定义
-                if source_functions[function_name] != target_functions[function_name]:
+                def normalize_sql(sql):
+                    import re
+                    # 去除多行注释
+                    sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
+                    # 去除单行注释 -- ... 和 # ...
+                    sql = re.sub(r'--.*?$', '', sql, flags=re.MULTILINE)
+                    sql = re.sub(r'#.*?$', '', sql, flags=re.MULTILINE)
+                    # 去除所有空白字符
+                    sql = re.sub(r'\s+', '', sql)
+                    return sql
+
+                norm_source = normalize_sql(source_functions[function_name])
+                norm_target = normalize_sql(target_functions[function_name])
+                if norm_source != norm_target:
                     result = self._create_result(
                         task_log_id=task_log_id,
                         object_name=function_name,

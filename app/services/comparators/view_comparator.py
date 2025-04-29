@@ -88,7 +88,16 @@ class ViewComparator(BaseComparator):
                 results.append(result)
             else:
                 # 比较视图定义
-                if source_views[view_name] != target_views[view_name]:
+                def normalize_sql(sql):
+                    import re
+                    sql = re.sub(r'/\*.*?\*/', '', sql, flags=re.DOTALL)
+                    sql = re.sub(r'--.*?$', '', sql, flags=re.MULTILINE)
+                    sql = re.sub(r'#.*?$', '', sql, flags=re.MULTILINE)
+                    sql = re.sub(r'\s+', '', sql)
+                    return sql
+                norm_source = normalize_sql(source_views[view_name])
+                norm_target = normalize_sql(target_views[view_name])
+                if norm_source != norm_target:
                     result = self._create_result(
                         task_log_id=task_log_id,
                         object_name=view_name,

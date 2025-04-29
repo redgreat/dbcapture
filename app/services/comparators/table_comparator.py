@@ -141,11 +141,25 @@ def _compare_columns(
             target_col = target[col]
             col_diffs = {}
 
-            if source_col["type"] != target_col["type"]:
-                col_diffs["type"] = {
-                    "source": source_col["type"],
-                    "target": target_col["type"],
-                }
+            # 对于 int/bigint/smallint/tinyint 类型，忽略长度差异
+            import re
+            def get_base_type(type_str):
+                return re.match(r"^\\w+", type_str).group(0).lower() if re.match(r"^\\w+", type_str) else type_str.lower()
+            int_types = {"int", "bigint", "smallint", "tinyint"}
+            source_base = get_base_type(source_col["type"])
+            target_base = get_base_type(target_col["type"])
+            if source_base in int_types and target_base in int_types:
+                if source_base != target_base:
+                    col_diffs["type"] = {
+                        "source": source_col["type"],
+                        "target": target_col["type"],
+                    }
+            else:
+                if source_col["type"] != target_col["type"]:
+                    col_diffs["type"] = {
+                        "source": source_col["type"],
+                        "target": target_col["type"],
+                    }
             if source_col["nullable"] != target_col["nullable"]:
                 col_diffs["nullable"] = {
                     "source": source_col["nullable"],
