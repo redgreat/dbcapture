@@ -10,7 +10,6 @@
 <body>
     <!-- 返回顶部按钮 -->
     <div class="back-to-top" id="backToTop" title="返回顶部">↑</div>
-    
     <div class="container">
         <div class="header">
             <h1>数据库对比报告</h1>
@@ -20,7 +19,7 @@
             <p>状态：<span class="status status-{{ task.status }}">{{ task.status }}</span></p>
             {% if task.error_message %}
             <p>错误信息：{{ task.error_message }}</p>
-            {% endif %}
+            {%- endif %}
         </div>
 
         <div class="summary">
@@ -39,9 +38,9 @@
                     <td>
                         {% if summary.differences_by_type.config > 0 %}
                             <a href="#section-config">{{ summary.differences_by_type.config }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.config }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
                 <tr>
@@ -49,9 +48,9 @@
                     <td>
                         {% if summary.differences_by_type.table > 0 %}
                             <a href="#section-table">{{ summary.differences_by_type.table }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.table }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
                 <tr>
@@ -59,9 +58,9 @@
                     <td>
                         {% if summary.differences_by_type.view > 0 %}
                             <a href="#section-view">{{ summary.differences_by_type.view }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.view }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
                 <tr>
@@ -69,9 +68,9 @@
                     <td>
                         {% if summary.differences_by_type.procedure > 0 %}
                             <a href="#section-procedure">{{ summary.differences_by_type.procedure }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.procedure }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
                 <tr>
@@ -79,9 +78,9 @@
                     <td>
                         {% if summary.differences_by_type.function > 0 %}
                             <a href="#section-function">{{ summary.differences_by_type.function }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.function }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
                 <tr>
@@ -89,61 +88,22 @@
                     <td>
                         {% if summary.differences_by_type.trigger > 0 %}
                             <a href="#section-trigger">{{ summary.differences_by_type.trigger }}</a>
-                        {% else %}
+                        {%- else -%}
                             {{ summary.differences_by_type.trigger }}
-                        {% endif %}
+                        {%- endif %}
                     </td>
                 </tr>
             </table>
         </div>
 
-        {% for type, items in results.items() %}
-        {% if items %}
-        <div class="section" id="section-{{ type }}">
-            <h2 class="section-title">{{ type|title }} 差异</h2>
-            {% for item in items %}
-            {% if item.has_differences %}
-            <div class="diff-item">
-                <h4>{{ item.object_name }}</h4>
-                {% if item.difference_details %}
-                <div class="diff-details">
-                    {% if item.difference_details is string %}
-                        {{ item.difference_details }}
-                    {% else %}
-                        {% if type == 'table' %}
-                            {% if item.difference_details.columns is defined or item.difference_details.indexes is defined or item.difference_details.constraints is defined %}
-                                {% if item.difference_details.columns is defined and item.difference_details.columns %}<h5>列差异:</h5><pre class="json-content" data-json='{{ item.difference_details.columns|tojson|safe }}'></pre>{% endif %}
-                                {% if item.difference_details.indexes is defined and item.difference_details.indexes %}<h5>索引差异:</h5><pre class="json-content" data-json='{{ item.difference_details.indexes|tojson|safe }}'></pre>{% endif %}
-                                {% if item.difference_details.constraints is defined and item.difference_details.constraints %}<h5>约束差异:</h5><pre class="json-content" data-json='{{ item.difference_details.constraints|tojson|safe }}'></pre>{% endif %}
-                            {% else %}
-                                <pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>
-                            {% endif %}
-                        {% elif item.difference_details.message is defined %}
-                            {{ item.difference_details.message }}
-                        {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_source' %}
-                            <div class="text-left">表 {{ item.object_name }} 在源数据库中不存在</div>
-                        {% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_target' %}
-                            <div class="text-left">表 {{ item.object_name }} 在目标数据库中不存在</div>
-                        {% else %}
-                            <pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if item.change_sql and type == 'table' %}
-                <h4>变更SQL:</h4>
-                <div class="sql-code">
-                    <pre>{{ item.change_sql }}</pre>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-    <!-- 引入报告页面的JavaScript文件 -->
-    <script src="/static/js/report.js"></script>
+        {% for type, items in results.items() -%}{%- if items %}
+        <div class="section" id="section-{{ type }}"><h2 class="section-title">{{ type|title }} 差异</h2>
+            {%- for item in items -%}
+            {%- if item.has_differences %}
+            <div class="diff-item"><h4>{{ item.object_name }}</h4>{%- if item.difference_details %}<div class="diff-details">{%- if item.difference_details is string %}<div class="text-left">{{ item.difference_details }}</div>{%- else -%}{%- if type == 'table' %}{%- if item.difference_details.columns is defined or item.difference_details.indexes is defined or item.difference_details.constraints is defined %}{%- if item.difference_details.columns is defined and item.difference_details.columns %}<h5>列差异:</h5><pre class="json-content" data-json='{{ item.difference_details.columns|tojson|safe }}'></pre>{%- endif %}{% if item.difference_details.indexes is defined and item.difference_details.indexes %}<h5>索引差异:</h5><pre class="json-content" data-json='{{ item.difference_details.indexes|tojson|safe }}'></pre>{%- endif %}{% if item.difference_details.constraints is defined and item.difference_details.constraints %}<h5>约束差异:</h5><pre class="json-content" data-json='{{ item.difference_details.constraints|tojson|safe }}'></pre>{%- endif %}{%- else -%}<pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>{%- endif %}{% elif item.difference_details.message is defined %}<div class="text-left">{{ item.difference_details.message }}</div>{% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_source' %}<div class="text-left">{% if type == 'table' %}表{% elif type == 'procedure' %}存储过程{% elif type == 'function' %}函数{% elif type == 'view' %}视图{% elif type == 'trigger' %}触发器{% else %}{{ type }}{% endif %} {{ item.object_name }} 在源数据库中不存在</div>{% elif item.difference_details.type is defined and item.difference_details.type == 'missing_in_target' %}<div class="text-left">{% if type == 'table' %}表{% elif type == 'procedure' %}存储过程{% elif type == 'function' %}函数{% elif type == 'view' %}视图{% elif type == 'trigger' %}触发器{% else %}{{ type }}{% endif %} {{ item.object_name }} 在目标数据库中不存在</div>{%- else -%}<pre class="json-content" data-json='{{ item.difference_details|tojson|safe }}'></pre>{%- endif %}{%- endif %}
+                </div>{%- endif %}{%- if item.change_sql and type == 'table' %}<h4>变更SQL:</h4><div class="sql-code"><pre>{{ item.change_sql }}</pre></div>{%- endif %}</div>
+            {%- endif %}{%- endfor %}</div>
+        {%- endif %}{%- endfor %}
+    </div><!-- 引入报告页面的JavaScript文件 --><script src="/static/js/report.js"></script>
 </body>
 </html> 

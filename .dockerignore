@@ -19,5 +19,6 @@ Dockerfile
 LICENSE
 README.md
 README.Docker.md
-conf/db.conf
 !src
+conf
+script
