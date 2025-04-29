@@ -17,6 +17,35 @@ FROM ROUTINES
 WHERE ROUTINE_SCHEMA='serviceordercenter'
   AND ROUTINE_TYPE='FUNCTION';
 
+
+select * from tasks;
+
+SELECT DISTINCT type FROM results;
+
+select distinct concat('"',object_name,'",') 
+  from results
+  where type='function'
+  and has_differences=1
+  and difference_details like '%不存在%';
+
+select distinct concat('"',object_name,'",') 
+  from results
+  where type='VIEW'
+  and has_differences=1
+  and difference_details like '%不存在%';
+
+select distinct concat('"',object_name,'",') 
+  from results
+  where type='PROCEDURE'
+  and has_differences=1
+  and difference_details like '%不存在%';
+
+SELECT * FROM results
+WHERE type='PROCEDURE'
+  AND task_log_id=48
+  AND has_differences=1
+  AND difference_details LIKE '%不同%';
+  
 __efmigrationshistory
 aggregatedcounter
 allnewprice
